@@ -4,7 +4,7 @@ Converte dados do OpenStreetMap em camadas de cidade para o jogo (`CityMap` de `
 
 ## Fluxo
 
-1. Baixar do Overpass a área urbana com `out body geom` (consulta em [`queries/taquara.overpassql`](queries/taquara.overpassql)).
+1. Baixar a área urbana: pelo Overpass Turbo com a consulta de [`queries/taquara.overpassql`](queries/taquara.overpassql) (Exportar → dados OSM brutos), ou um `.osm` do botão Exportar do openstreetmap.org. O CLI aceita os dois formatos.
 2. Rodar a conversão:
 
    ```bash

@@ -6,11 +6,12 @@ import { CityMap, type BBox } from "@bigriver/shared";
 import { convert } from "./convert.js";
 import { coverage } from "./coverage.js";
 import type { OverpassResponse } from "./overpass.js";
+import { osmXmlToOverpass } from "./osmxml.js";
 import { renderPreview } from "./preview.js";
 
 const HELP = `Uso: bigriver-map --in <overpass.json> --out <pasta> --bbox=oeste,sul,leste,norte [--scale 0.5] [--city taquara]
 
-Converte uma resposta do Overpass (out body geom) em:
+Converte uma resposta do Overpass (JSON com out body geom) ou um arquivo .osm (XML) em:
   <city>.map.json    camadas da cidade em metros de jogo (schema CityMap)
   coverage.json      contagens de cobertura do OSM
   preview-top.svg    prévia vista de cima com grade de 50 m de jogo
@@ -31,7 +32,8 @@ async function main() {
   const bbox = values.bbox.split(",").map(Number) as BBox;
   if (bbox.length !== 4 || bbox.some((n) => !Number.isFinite(n))) throw new Error("--bbox precisa de 4 números");
   const scale = Number(values.scale);
-  const raw = JSON.parse(await readFile(values.in, "utf8")) as OverpassResponse;
+  const text = await readFile(values.in, "utf8");
+  const raw = text.trimStart().startsWith("<") ? osmXmlToOverpass(text) : (JSON.parse(text) as OverpassResponse);
   const map = CityMap.parse(convert(raw, { cityId: values.city!, bbox, scale }));
   await mkdir(values.out, { recursive: true });
   await writeFile(join(values.out, `${values.city}.map.json`), JSON.stringify(map));
