@@ -90,6 +90,15 @@ describe("convert", () => {
   });
 });
 
+describe("recorte", () => {
+  it("descarta o que fica todo fora do bbox", () => {
+    const small = convert(data, { cityId: "t", bbox: [-50.7895, -29.6505, -50.7805, -29.647], scale: 1 });
+    expect(small.roads.map((r) => r.osmId)).toEqual(["way/10", "way/11"]);
+    expect(small.buildings).toEqual([]);
+    expect(small.waterways).toEqual([]);
+  });
+});
+
 describe("assembleRings", () => {
   it("descarta segmentos que não fecham", () => {
     expect(assembleRings([[{ lat: 0, lon: 0 }, { lat: 1, lon: 1 }]])).toEqual([]);

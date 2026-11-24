@@ -118,6 +118,11 @@ export function convert(data: OverpassResponse, opts: ConvertOptions): CityMap {
     if (closed) addPolygonFeature(el, [[line(parts[0]!) as Point[]]]);
   }
 
+  // Descarta o que fica todo fora do recorte (o arquivo de entrada pode cobrir uma área maior).
+  const inBox = ([x, y]: Point) => x >= 0 && y >= 0 && x <= proj.width && y <= proj.height;
+  const anyIn = (pts: Point[]) => pts.some(inBox);
+  const keep = <T>(items: T[], pts: (t: T) => Point[]) => items.filter((t) => anyIn(pts(t)));
+
   return {
     cityId: opts.cityId,
     source: {
@@ -129,7 +134,13 @@ export function convert(data: OverpassResponse, opts: ConvertOptions): CityMap {
     },
     scale: opts.scale,
     size: { width: proj.width, height: proj.height },
-    roads, buildings, areas, waterways, railways, pois, neighbourhoods,
+    roads: keep(roads, (r) => r.line),
+    buildings: keep(buildings, (b) => b.polygon[0]!),
+    areas: keep(areas, (a) => a.polygon[0]!),
+    waterways: keep(waterways, (w) => w.line),
+    railways: keep(railways, (r) => r.line),
+    pois: keep(pois, (p) => [p.position]),
+    neighbourhoods: keep(neighbourhoods, (n) => n.polygons.map((p) => p[0]!).flat()),
   };
 }
 
