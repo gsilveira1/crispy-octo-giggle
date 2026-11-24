@@ -3,3 +3,5 @@ dist
 .turbo
 .env
 *.log
+data/raw
+data/cities/*/build

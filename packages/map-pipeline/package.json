@@ -1,0 +1,31 @@
+{
+  "name": "@bigriver/map-pipeline",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Converte dados do OpenStreetMap em camadas de cidade para o jogo.",
+  "bin": {
+    "bigriver-city": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "city": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@bigriver/shared": "workspace:*",
+    "fast-xml-parser": "^5.12.1",
+    "proj4": "^2.15.0",
+    "s2-geometry": "^1.2.10",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@bigriver/tsconfig": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@types/proj4": "^2.5.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

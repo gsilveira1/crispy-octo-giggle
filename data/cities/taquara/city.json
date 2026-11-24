@@ -1,0 +1,19 @@
+{
+  "id": "taquara",
+  "name": "Taquara",
+  "state": "RS",
+  "downloadBbox": [
+    -50.83,
+    -29.69,
+    -50.73,
+    -29.61
+  ],
+  "playBbox": [
+    -50.79,
+    -29.66,
+    -50.77,
+    -29.64
+  ],
+  "scale": 0.5,
+  "metersPerTile": 2
+}

@@ -11,7 +11,9 @@ apps/
   server/   servidor multiplayer
 packages/
   shared/   modelos de dados compartilhados (schemas zod)
+  map-pipeline/  converte o OpenStreetMap em mapas de cidade
   tsconfig/ configuração base do TypeScript
+data/cities/     uma pasta por cidade (veja data/cities/README.md)
 docs/decisions/  registros de decisões de arquitetura
 ```
 
@@ -24,3 +26,15 @@ pnpm dev
 ```
 
 Requer Node 22+ e pnpm 10.
+
+## Cidades
+
+Para adicionar uma cidade nova a partir do OpenStreetMap, siga [data/cities/README.md](data/cities/README.md):
+
+```bash
+pnpm city new <id> --name "Nome" --bbox=oeste,sul,leste,norte
+pnpm city fetch <id>
+pnpm city build <id>
+```
+
+Mapas: © OpenStreetMap contributors (ODbL).
