@@ -6,6 +6,7 @@ import { CityConfig, cityPaths, loadCity, repoRoot, saveCity } from "./cityConfi
 import { convert } from "./convert.js";
 import { coverage } from "./coverage.js";
 import type { OverpassResponse } from "./overpass.js";
+import { fetchOpenBuildings, type OpenBuildingsFile } from "./openBuildings.js";
 import { osmXmlToOverpass } from "./osmxml.js";
 import { renderPreview } from "./preview.js";
 import { OVERPASS_ENDPOINTS, USER_AGENT, overpassQuery, overpassTurboUrl } from "./query.js";
@@ -102,7 +103,12 @@ export async function cmdBuild(id: string, input?: string) {
     return;
   }
   const raw = await readOsmFile(src);
-  const map = CityMap.parse(convert(raw, { cityId: cfg.id, bbox: cfg.playBbox, scale: cfg.scale }));
+  let openBuildings: OpenBuildingsFile | undefined;
+  if (cfg.openBuildings.enabled) {
+    if (existsSync(p.openBuildings)) openBuildings = JSON.parse(await readFile(p.openBuildings, "utf8")) as OpenBuildingsFile;
+    else console.warn(`Aviso: sem ${rel(p.openBuildings)}. Rode "pnpm city buildings ${id}" para preencher os prédios que faltam no OSM.`);
+  }
+  const map = CityMap.parse(convert(raw, { cityId: cfg.id, bbox: cfg.playBbox, scale: cfg.scale, openBuildings }));
   await mkdir(p.build, { recursive: true });
   await writeFile(join(p.build, `${cfg.id}.map.json`), JSON.stringify(map));
   const cov = coverage(map);
@@ -111,7 +117,8 @@ export async function cmdBuild(id: string, input?: string) {
   await writeFile(join(p.build, "preview-iso.svg"), renderPreview(map, { view: "iso", metersPerTile: cfg.metersPerTile }));
   const minutes = (Math.max(map.size.width, map.size.height) / 4 / 60).toFixed(1);
   console.log(`${cfg.name}: área jogável ${Math.round(map.size.width)} × ${Math.round(map.size.height)} m de jogo (escala ${cfg.scale}), ~${minutes} min para atravessar a pé.`);
-  console.log(`Prédios ${cov.buildings} (${cov.buildingsWithLevels} com andares) · POIs ${cov.pois} · bairros ${cov.neighbourhoods.length}`);
+  const bySource = Object.entries(cov.buildingsBySource).map(([k, v]) => `${v} ${k}`).join(", ");
+  console.log(`Prédios ${cov.buildings}${bySource ? ` (${bySource})` : ""}, ${cov.buildingsWithLevels} com andares do OSM · POIs ${cov.pois} · bairros ${cov.neighbourhoods.length}`);
   console.log(`Saída em ${rel(p.build)}/`);
 }
 
@@ -128,4 +135,13 @@ export async function cmdList() {
     const has = existsSync(cityPaths(id).raw) ? "OSM baixado" : "OSM não baixado";
     console.log(`${id.padEnd(20)} ${cfg.name.padEnd(24)} escala ${cfg.scale}  ${has}`);
   }
+}
+
+export async function cmdBuildings(id: string) {
+  const cfg = await loadCity(id);
+  const p = cityPaths(id);
+  await mkdir(dirname(p.openBuildings), { recursive: true });
+  const data = await fetchOpenBuildings(cfg.downloadBbox, cfg.openBuildings.minConfidence);
+  await writeFile(p.openBuildings, JSON.stringify(data));
+  console.log(`Salvo ${rel(p.openBuildings)}: ${data.buildings.length} prédios com confiança >= ${data.minConfidence}`);
 }

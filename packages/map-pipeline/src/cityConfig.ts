@@ -17,6 +17,10 @@ export const CityConfig = z.object({
   scale: z.number().positive().max(1).default(0.5),
   /** Metros de jogo por tile isométrico. */
   metersPerTile: z.number().positive().default(2),
+  /** Preencher prédios com o Google Open Buildings (licença ODbL). */
+  openBuildings: z
+    .object({ enabled: z.boolean().default(true), minConfidence: z.number().min(0.65).max(1).default(0.75) })
+    .default({}),
 });
 export type CityConfig = z.infer<typeof CityConfig>;
 
@@ -38,6 +42,7 @@ export const cityPaths = (id: string, root = repoRoot()) => {
     config: join(dir, "city.json"),
     query: join(dir, "query.overpassql"),
     raw: join(root, "data", "raw", `${id}.json`),
+    openBuildings: join(root, "data", "raw", `${id}.open-buildings.json`),
     build: join(dir, "build"),
   };
 };

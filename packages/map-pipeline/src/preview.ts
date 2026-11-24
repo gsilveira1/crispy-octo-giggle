@@ -73,7 +73,7 @@ export function renderPreview(map: CityMap, opts: PreviewOptions): string {
     const [x, y] = project(p.position);
     out.push(`<text x="${(x + 5).toFixed(1)}" y="${(y + 4).toFixed(1)}" font-family="sans-serif" font-size="11" fill="#222" stroke="#fff" stroke-width="3" paint-order="stroke">${esc(p.name!)}</text>`);
   }
-  out.push(`<text x="${minX + 8}" y="${minY + h - 8}" font-family="sans-serif" font-size="12" fill="#555">© OpenStreetMap contributors</text>`);
+  out.push(`<text x="${minX + 8}" y="${minY + h - 8}" font-family="sans-serif" font-size="12" fill="#555">${esc(["© OpenStreetMap contributors", ...map.source.extraAttributions].join(" · "))}</text>`);
   out.push("</svg>");
   return out.join("\n");
 }

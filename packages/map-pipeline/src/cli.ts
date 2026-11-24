@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
 import { parseBbox } from "./cityConfig.js";
-import { cmdBuild, cmdFetch, cmdList, cmdNew, cmdQuery, listCities } from "./commands.js";
+import { cmdBuild, cmdBuildings, cmdFetch, cmdList, cmdNew, cmdQuery, listCities } from "./commands.js";
 
 const HELP = `Uso: pnpm city <comando> [opções]
 
@@ -10,9 +10,10 @@ Comandos:
                     cria data/cities/<id>/city.json e a consulta do Overpass
   query <id>        regera a consulta e mostra o link para baixar pelo navegador
   fetch <id>        baixa os dados do Overpass para data/raw/<id>.json
+  buildings <id>    baixa os prédios do Google Open Buildings (arquivo grande, alguns minutos)
   build <id> [--in arquivo.json|.osm]
                     converte para data/cities/<id>/build/ (mapa, cobertura, prévias)
-  all               fetch + build de todas as cidades (pula o fetch se já baixado, a menos que --refresh)
+  all               fetch + buildings + build de todas as cidades (pula o fetch se já baixado, a menos que --refresh)
   list              lista as cidades configuradas
 
 Use sempre --bbox=... com "=" porque os números começam com "-".`;
@@ -42,6 +43,7 @@ async function main() {
       });
     case "query": return cmdQuery(needId());
     case "fetch": return cmdFetch(needId());
+    case "buildings": return cmdBuildings(needId());
     case "build": return cmdBuild(needId(), values.in);
     case "list": return cmdList();
     case "all": {
@@ -49,6 +51,7 @@ async function main() {
       const { cityPaths } = await import("./cityConfig.js");
       for (const c of await listCities()) {
         if (values.refresh || !existsSync(cityPaths(c).raw)) await cmdFetch(c);
+        if (values.refresh || !existsSync(cityPaths(c).openBuildings)) await cmdBuildings(c);
         await cmdBuild(c);
       }
       return;

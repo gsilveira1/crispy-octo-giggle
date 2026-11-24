@@ -3,6 +3,7 @@ import type { CityMap, PoiCategory } from "@bigriver/shared";
 export type Coverage = {
   buildings: number;
   buildingsWithLevels: number;
+  buildingsBySource: Record<string, number>;
   buildingKinds: Record<string, number>;
   roadSegments: number;
   roadKm: number;
@@ -29,6 +30,7 @@ export function coverage(map: CityMap): Coverage {
   return {
     buildings: map.buildings.length,
     buildingsWithLevels: map.buildings.filter((b) => b.levelsFromOsm).length,
+    buildingsBySource: map.buildings.reduce<Record<string, number>>((acc, b) => ({ ...acc, [b.source]: (acc[b.source] ?? 0) + 1 }), {}),
     buildingKinds: Object.fromEntries(Object.entries(kinds).sort((a, b) => b[1] - a[1])),
     roadSegments: map.roads.length,
     roadKm: toKm(roadM),

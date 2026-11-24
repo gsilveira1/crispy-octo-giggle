@@ -2,7 +2,8 @@ import type { Area, BBox, Building, CityMap, Line, MapNeighbourhood, Poi, Point,
 import { areaKind, buildingLevels, poiCategory, roadClass, roadWidth } from "./classify.js";
 import { osmId, type LatLon, type OsmElement, type OsmRelation, type OsmWay, type OverpassResponse } from "./overpass.js";
 import { EPSG_31982, makeProjector, type Projector } from "./projection.js";
-import { assembleRings } from "./rings.js";
+import { levelsFromArea, OPEN_BUILDINGS_ATTRIBUTION, type OpenBuildingsFile } from "./openBuildings.js";
+import { assembleRings, pointInRing } from "./rings.js";
 
 export type ConvertOptions = {
   cityId: string;
@@ -10,6 +11,8 @@ export type ConvertOptions = {
   bbox: BBox;
   /** Metros de jogo por metro real. */
   scale: number;
+  /** Prédios do Google Open Buildings para preencher onde o OSM não tem. */
+  openBuildings?: OpenBuildingsFile;
 };
 
 /** Quebra a geometria de uma way nos pontos omitidos pelo Overpass (fora do bbox). */
@@ -63,7 +66,7 @@ export function convert(data: OverpassResponse, opts: ConvertOptions): CityMap {
     for (const polygon of polygons) {
       if (tags.building && tags.building !== "no") {
         const { levels, fromOsm } = buildingLevels(tags);
-        buildings.push({ osmId: osmId(el), kind: tags.building, name: tags.name, levels, levelsFromOsm: fromOsm, polygon });
+        buildings.push({ osmId: osmId(el), source: "osm", kind: tags.building, name: tags.name, levels, levelsFromOsm: fromOsm, polygon });
         continue;
       }
       const kind = areaKind(tags);
@@ -118,6 +121,26 @@ export function convert(data: OverpassResponse, opts: ConvertOptions): CityMap {
     if (closed) addPolygonFeature(el, [[line(parts[0]!) as Point[]]]);
   }
 
+  // Preenche com o Open Buildings onde não há prédio do OSM (o OSM sempre ganha).
+  if (opts.openBuildings) {
+    const osmRings = buildings.map((b) => {
+      const r = b.polygon[0]! as [number, number][];
+      const xs = r.map((p) => p[0]);
+      const ys = r.map((p) => p[1]);
+      return { r, minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+    });
+    for (const ob of opts.openBuildings.buildings) {
+      const ring = ob.ring.map(([lon, lat]) => proj.project({ lat, lon }));
+      const c = centroid(ring.slice(0, -1));
+      const [cx, cy] = c;
+      if (osmRings.some((o) => cx >= o.minX && cx <= o.maxX && cy >= o.minY && cy <= o.maxY && pointInRing(c, o.r))) continue;
+      buildings.push({
+        osmId: `ob/${ob.id}`, source: "open-buildings", kind: "yes",
+        levels: levelsFromArea(ob.areaM2), levelsFromOsm: false, polygon: [ring],
+      });
+    }
+  }
+
   // Descarta o que fica todo fora do recorte (o arquivo de entrada pode cobrir uma área maior).
   const inBox = ([x, y]: Point) => x >= 0 && y >= 0 && x <= proj.width && y <= proj.height;
   const anyIn = (pts: Point[]) => pts.some(inBox);
@@ -127,6 +150,7 @@ export function convert(data: OverpassResponse, opts: ConvertOptions): CityMap {
     cityId: opts.cityId,
     source: {
       attribution: "© OpenStreetMap contributors",
+      extraAttributions: opts.openBuildings ? [OPEN_BUILDINGS_ATTRIBUTION] : [],
       license: "ODbL-1.0",
       osmTimestamp: data.osm3s?.timestamp_osm_base,
       bbox: opts.bbox,

@@ -65,6 +65,9 @@ importers:
       proj4:
         specifier: ^2.15.0
         version: 2.23.0
+      s2-geometry:
+        specifier: ^1.2.10
+        version: 1.2.10
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -546,6 +549,10 @@ packages:
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
 
+  long@3.2.0:
+    resolution: {integrity: sha512-ZYvPPOMqUwPoDsbJaR10iQJYnMuZhRTvHYl62ErLIEX7RgFlziSBUUvrt3OVfc47QlHHpzPZYP17g3Fv7oeJkg==}
+    engines: {node: '>=0.6'}
+
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
 
@@ -597,6 +604,9 @@ packages:
     resolution: {integrity: sha512-IHx4DeeTGhoAPke6p1Wlg0JEQFyQoZQQjEe1iD+nhEERk7eoeHK9zyOpVJiGc54Z1MCgI96rN1tD7Ttub8XyPA==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
+
+  s2-geometry@1.2.10:
+    resolution: {integrity: sha512-5WejfQu1XZ25ZerW8uL6xP1sM2krcOYKhI6TbfybGRf+vTQLrm3E+4n0+1lWg+MYqFjPzoe51zKhn2sBRMCt5g==}
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
@@ -1069,6 +1079,8 @@ snapshots:
 
   js-tokens@9.0.1: {}
 
+  long@3.2.0: {}
+
   loupe@3.2.1: {}
 
   magic-string@0.30.21:
@@ -1133,6 +1145,10 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.68.8
       '@rollup/rollup-win32-x64-msvc': 4.68.8
       fsevents: 2.3.3
+
+  s2-geometry@1.2.10:
+    dependencies:
+      long: 3.2.0
 
   siginfo@2.0.0: {}
 

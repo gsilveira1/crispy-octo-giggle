@@ -32,7 +32,19 @@ pnpm city fetch santa-cruz-do-sul
 
 Salva em `data/raw/santa-cruz-do-sul.json` (fora do git). Se o download automático falhar, o comando mostra um link do Overpass Turbo que já abre com a consulta: clique em **Exportar → dados OSM brutos → download** e salve com o nome indicado.
 
-### 4. Converter
+### 4. Baixar os prédios do Google Open Buildings
+
+O OSM costuma ter poucos prédios nas cidades do interior. Este passo baixa os contornos do [Google Open Buildings](https://sites.research.google/gr/open-buildings/) para a área de download:
+
+```bash
+pnpm city buildings santa-cruz-do-sul
+```
+
+Salva em `data/raw/santa-cruz-do-sul.open-buildings.json`. O arquivo de origem cobre uma região enorme (700 MB compactados), então leva alguns minutos, mas só o recorte é guardado. Na conversão, onde o OSM já tem prédio ele ganha; o Open Buildings só preenche o resto. A altura é estimada pela área da planta.
+
+Para desligar, ponha `"openBuildings": { "enabled": false }` no `city.json`. Para ser mais exigente com a detecção, aumente `minConfidence` (padrão 0.75).
+
+### 5. Converter
 
 ```bash
 pnpm city build santa-cruz-do-sul
@@ -54,7 +66,7 @@ Abra os SVGs no navegador para conferir recorte e escala. Ajuste `playBbox` ou `
 ```bash
 pnpm city list            # cidades configuradas e se o OSM já foi baixado
 pnpm city query <id>      # regera a consulta e mostra o link do navegador
-pnpm city all             # baixa (se faltar) e converte todas as cidades
+pnpm city all             # baixa OSM e prédios (se faltarem) e converte todas as cidades
 pnpm city all --refresh   # baixa tudo de novo (dados mais recentes do OSM)
 pnpm city build <id> --in arquivo.osm   # converte um .osm exportado do openstreetmap.org
 ```
@@ -69,7 +81,9 @@ pnpm city build <id> --in arquivo.osm   # converte um .osm exportado do openstre
 | `playBbox` | Área jogável, dentro da de download |
 | `scale` | Metros de jogo por metro real (0.5 = cidade com metade do tamanho) |
 | `metersPerTile` | Metros de jogo por tile isométrico |
+| `openBuildings.enabled` | Preencher prédios com o Google Open Buildings (padrão `true`) |
+| `openBuildings.minConfidence` | Confiança mínima da detecção, de 0.65 a 1 (padrão 0.75) |
 
 ## Licença dos dados
 
-Os mapas gerados são derivados do OpenStreetMap (ODbL). Mantenha o crédito "© OpenStreetMap contributors" no jogo e neste repositório, e mantenha este pipeline público para que o banco derivado possa ser recriado.
+Os mapas gerados são derivados do OpenStreetMap e do Google Open Buildings, ambos usados sob ODbL. Mantenha os créditos "© OpenStreetMap contributors" e "Google Open Buildings" no jogo e neste repositório, e mantenha este pipeline público para que o banco derivado possa ser recriado.

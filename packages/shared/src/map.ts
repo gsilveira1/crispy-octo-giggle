@@ -35,8 +35,13 @@ export const Road = z.object({
 });
 export type Road = z.infer<typeof Road>;
 
+export const BuildingSource = z.enum(["osm", "open-buildings"]);
+export type BuildingSource = z.infer<typeof BuildingSource>;
+
 export const Building = z.object({
+  /** "way/123" para o OSM, "ob/<plus code>" para o Google Open Buildings. */
   ...osmRef,
+  source: BuildingSource.default("osm"),
   kind: z.string(),
   name: z.string().optional(),
   levels: z.number().int().min(1),
@@ -78,6 +83,8 @@ export const CityMap = z.object({
   cityId: z.string(),
   source: z.object({
     attribution: z.literal("© OpenStreetMap contributors"),
+    /** Créditos de outras fontes usadas, ex.: "Google Open Buildings (ODbL)". */
+    extraAttributions: z.array(z.string()).default([]),
     license: z.literal("ODbL-1.0"),
     osmTimestamp: z.string().optional(),
     /** Recorte em WGS84: [oeste, sul, leste, norte]. */
