@@ -5,3 +5,4 @@ dist
 *.log
 data/raw
 data/cities/*/build
+apps/game/dist

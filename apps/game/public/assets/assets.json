@@ -1,0 +1,83 @@
+{
+  "ground": {
+    "file": "ground.png",
+    "frameWidth": 64,
+    "frameHeight": 32,
+    "frames": [
+      "ground",
+      "grass",
+      "forest",
+      "water",
+      "road_major",
+      "road_minor",
+      "path",
+      "rail",
+      "plaza",
+      "farmland",
+      "lot"
+    ]
+  },
+  "avatar": {
+    "file": "avatar.png",
+    "frameWidth": 32,
+    "frameHeight": 48,
+    "frames": 3
+  },
+  "buildings": {
+    "default": {
+      "wallLight": "#efe6d6",
+      "wallDark": "#cdbfa8",
+      "roof": "#b5523b"
+    },
+    "house": {
+      "wallLight": "#f3e3c3",
+      "wallDark": "#d4bf98",
+      "roof": "#a9483a"
+    },
+    "apartments": {
+      "wallLight": "#e7e3de",
+      "wallDark": "#bdb6ad",
+      "roof": "#8f8a84"
+    },
+    "commercial": {
+      "wallLight": "#e9e0f0",
+      "wallDark": "#c2b6cf",
+      "roof": "#7f7a8a"
+    },
+    "retail": {
+      "wallLight": "#f2dcd0",
+      "wallDark": "#d1b3a3",
+      "roof": "#8a7a72"
+    },
+    "church": {
+      "wallLight": "#fbf7ea",
+      "wallDark": "#dcd3b9",
+      "roof": "#6d6f7a"
+    },
+    "public": {
+      "wallLight": "#f6efd9",
+      "wallDark": "#d6caa8",
+      "roof": "#5f7a8a"
+    },
+    "government": {
+      "wallLight": "#f6efd9",
+      "wallDark": "#d6caa8",
+      "roof": "#5f7a8a"
+    },
+    "school": {
+      "wallLight": "#f4e7c6",
+      "wallDark": "#d6c59b",
+      "roof": "#9a5d3c"
+    },
+    "industrial": {
+      "wallLight": "#d9dde0",
+      "wallDark": "#aeb4ba",
+      "roof": "#7c8590"
+    },
+    "warehouse": {
+      "wallLight": "#d9dde0",
+      "wallDark": "#aeb4ba",
+      "roof": "#7c8590"
+    }
+  }
+}

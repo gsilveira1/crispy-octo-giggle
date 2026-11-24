@@ -4,3 +4,4 @@ export * from "./npc.js";
 export * from "./rules.js";
 export * from "./story.js";
 export * from "./map.js";
+export * from "./tiles.js";

@@ -6,3 +6,4 @@ export { osmXmlToOverpass } from "./osmxml.js";
 export { overpassQuery, overpassTurboUrl } from "./query.js";
 export { CityConfig, loadCity, cityPaths } from "./cityConfig.js";
 export type { OverpassResponse } from "./overpass.js";
+export { buildTiles, type TileOptions } from "./tiles.js";
