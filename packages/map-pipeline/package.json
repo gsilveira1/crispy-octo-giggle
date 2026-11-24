@@ -5,18 +5,19 @@
   "type": "module",
   "description": "Converte dados do OpenStreetMap em camadas de cidade para o jogo.",
   "bin": {
-    "bigriver-map": "./dist/cli.js"
+    "bigriver-city": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "import": "tsx src/cli.ts"
+    "city": "tsx src/cli.ts"
   },
   "dependencies": {
     "@bigriver/shared": "workspace:*",
     "fast-xml-parser": "^5.12.1",
-    "proj4": "^2.15.0"
+    "proj4": "^2.15.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@bigriver/tsconfig": "workspace:*",

@@ -2,6 +2,7 @@
 (
   way["highway"];
   way["building"];
+  nwr["building"]["type"="multipolygon"];
   nwr["landuse"];
   nwr["leisure"];
   nwr["natural"~"water|wood|scrub|grassland|wetland"];

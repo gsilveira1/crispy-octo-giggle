@@ -1,51 +1,65 @@
 #!/usr/bin/env node
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { CityMap, type BBox } from "@bigriver/shared";
-import { convert } from "./convert.js";
-import { coverage } from "./coverage.js";
-import type { OverpassResponse } from "./overpass.js";
-import { osmXmlToOverpass } from "./osmxml.js";
-import { renderPreview } from "./preview.js";
+import { parseBbox } from "./cityConfig.js";
+import { cmdBuild, cmdFetch, cmdList, cmdNew, cmdQuery, listCities } from "./commands.js";
 
-const HELP = `Uso: bigriver-map --in <overpass.json> --out <pasta> --bbox=oeste,sul,leste,norte [--scale 0.5] [--city taquara]
+const HELP = `Uso: pnpm city <comando> [opções]
 
-Converte uma resposta do Overpass (JSON com out body geom) ou um arquivo .osm (XML) em:
-  <city>.map.json    camadas da cidade em metros de jogo (schema CityMap)
-  coverage.json      contagens de cobertura do OSM
-  preview-top.svg    prévia vista de cima com grade de 50 m de jogo
-  preview-iso.svg    prévia isométrica`;
+Comandos:
+  new <id> --name "Nome" (--bbox=oeste,sul,leste,norte | --search) [--play-bbox=...] [--scale 0.5] [--state RS]
+                    cria data/cities/<id>/city.json e a consulta do Overpass
+  query <id>        regera a consulta e mostra o link para baixar pelo navegador
+  fetch <id>        baixa os dados do Overpass para data/raw/<id>.json
+  build <id> [--in arquivo.json|.osm]
+                    converte para data/cities/<id>/build/ (mapa, cobertura, prévias)
+  all               fetch + build de todas as cidades (pula o fetch se já baixado, a menos que --refresh)
+  list              lista as cidades configuradas
+
+Use sempre --bbox=... com "=" porque os números começam com "-".`;
 
 async function main() {
-  const { values } = parseArgs({
+  const { values, positionals } = parseArgs({
+    allowPositionals: true,
     options: {
-      in: { type: "string" }, out: { type: "string" }, bbox: { type: "string" },
-      scale: { type: "string", default: "0.5" }, city: { type: "string", default: "taquara" },
-      "meters-per-tile": { type: "string", default: "2" }, help: { type: "boolean" },
+      name: { type: "string" }, state: { type: "string", default: "RS" },
+      bbox: { type: "string" }, "play-bbox": { type: "string" },
+      scale: { type: "string", default: "0.5" }, search: { type: "boolean", default: false },
+      in: { type: "string" }, refresh: { type: "boolean", default: false }, help: { type: "boolean", short: "h" },
     },
   });
-  if (values.help || !values.in || !values.out || !values.bbox) {
-    console.log(HELP);
-    process.exit(values.help ? 0 : 1);
+  const [cmd, id] = positionals;
+  const needId = () => {
+    if (!id) throw new Error(`Faltou o id da cidade. Ex.: pnpm city ${cmd} taquara`);
+    return id;
+  };
+  switch (cmd) {
+    case "new":
+      if (!values.name) throw new Error('Faltou --name "Nome da cidade"');
+      return cmdNew({
+        id: needId(), name: values.name, state: values.state!, scale: Number(values.scale), search: values.search!,
+        bbox: values.bbox ? parseBbox(values.bbox, "--bbox") : undefined,
+        playBbox: values["play-bbox"] ? parseBbox(values["play-bbox"], "--play-bbox") : undefined,
+      });
+    case "query": return cmdQuery(needId());
+    case "fetch": return cmdFetch(needId());
+    case "build": return cmdBuild(needId(), values.in);
+    case "list": return cmdList();
+    case "all": {
+      const { existsSync } = await import("node:fs");
+      const { cityPaths } = await import("./cityConfig.js");
+      for (const c of await listCities()) {
+        if (values.refresh || !existsSync(cityPaths(c).raw)) await cmdFetch(c);
+        await cmdBuild(c);
+      }
+      return;
+    }
+    default:
+      console.log(HELP);
+      if (!values.help) process.exitCode = 1;
   }
-  const bbox = values.bbox.split(",").map(Number) as BBox;
-  if (bbox.length !== 4 || bbox.some((n) => !Number.isFinite(n))) throw new Error("--bbox precisa de 4 números");
-  const scale = Number(values.scale);
-  const text = await readFile(values.in, "utf8");
-  const raw = text.trimStart().startsWith("<") ? osmXmlToOverpass(text) : (JSON.parse(text) as OverpassResponse);
-  const map = CityMap.parse(convert(raw, { cityId: values.city!, bbox, scale }));
-  await mkdir(values.out, { recursive: true });
-  await writeFile(join(values.out, `${values.city}.map.json`), JSON.stringify(map));
-  const cov = coverage(map);
-  await writeFile(join(values.out, "coverage.json"), JSON.stringify(cov, null, 2));
-  await writeFile(join(values.out, "preview-top.svg"), renderPreview(map, { view: "top", pxPerMeter: 0.5 / scale, gridMeters: 50 }));
-  await writeFile(join(values.out, "preview-iso.svg"), renderPreview(map, { view: "iso", metersPerTile: Number(values["meters-per-tile"]) }));
-  console.log(`Mapa ${map.size.width}×${map.size.height} m de jogo (escala ${scale}).`);
-  console.log(JSON.stringify({ ...cov, buildingKinds: undefined }, null, 2));
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error(`Erro: ${(err as Error).message}`);
   process.exit(1);
 });
