@@ -44,6 +44,8 @@ export const cityPaths = (id: string, root = repoRoot()) => {
     raw: join(root, "data", "raw", `${id}.json`),
     openBuildings: join(root, "data", "raw", `${id}.open-buildings.json`),
     build: join(dir, "build"),
+    /** Arquivos que o cliente carrega: apps/game/public/maps/<id>/ */
+    game: join(root, "apps", "game", "public", "maps", id),
   };
 };
 

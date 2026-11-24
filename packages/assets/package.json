@@ -1,0 +1,19 @@
+{
+  "name": "@bigriver/assets",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gera os assets provisórios do jogo (tileset do chão, personagem e paleta dos prédios).",
+  "scripts": {
+    "build:assets": "tsx src/build.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": { "@bigriver/shared": "workspace:*", "pngjs": "^7.0.0" },
+  "devDependencies": {
+    "@bigriver/tsconfig": "workspace:*",
+    "@types/node": "^22.10.0",
+    "@types/pngjs": "^6.0.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.0"
+  }
+}

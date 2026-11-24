@@ -6,12 +6,13 @@ MMORPG de browser com mapas reais das cidades do Rio Grande do Sul, começando p
 
 ```
 apps/
-  game/     cliente do jogo (browser)
+  game/     cliente do jogo (Phaser 4, roda com pnpm --filter @bigriver/game dev)
   admin/    painel para criar e configurar cidades, NPCs, regras e história
   server/   servidor multiplayer
 packages/
   shared/   modelos de dados compartilhados (schemas zod)
   map-pipeline/  converte o OpenStreetMap em mapas de cidade
+  assets/   gera os assets provisórios (pnpm assets)
   tsconfig/ configuração base do TypeScript
 data/cities/     uma pasta por cidade (veja data/cities/README.md)
 docs/decisions/  registros de decisões de arquitetura
@@ -22,7 +23,8 @@ docs/decisions/  registros de decisões de arquitetura
 ```bash
 pnpm install
 pnpm typecheck
-pnpm dev
+pnpm test
+pnpm --filter @bigriver/game dev   # abre Taquara em http://localhost:5173
 ```
 
 Requer Node 22+ e pnpm 10.

@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { CityMap, type BBox } from "@bigriver/shared";
 import { CityConfig, cityPaths, loadCity, repoRoot, saveCity } from "./cityConfig.js";
@@ -9,6 +9,7 @@ import type { OverpassResponse } from "./overpass.js";
 import { fetchOpenBuildings, type OpenBuildingsFile } from "./openBuildings.js";
 import { osmXmlToOverpass } from "./osmxml.js";
 import { renderPreview } from "./preview.js";
+import { buildTiles } from "./tiles.js";
 import { OVERPASS_ENDPOINTS, USER_AGENT, overpassQuery, overpassTurboUrl } from "./query.js";
 
 const rel = (p: string) => relative(repoRoot(), p);
@@ -120,6 +121,14 @@ export async function cmdBuild(id: string, input?: string) {
   const bySource = Object.entries(cov.buildingsBySource).map(([k, v]) => `${v} ${k}`).join(", ");
   console.log(`Prédios ${cov.buildings}${bySource ? ` (${bySource})` : ""}, ${cov.buildingsWithLevels} com andares do OSM · POIs ${cov.pois} · bairros ${cov.neighbourhoods.length}`);
   console.log(`Saída em ${rel(p.build)}/`);
+
+  // Mapa isométrico para o cliente do jogo.
+  const tiles = buildTiles(map, { name: cfg.name, metersPerTile: cfg.metersPerTile });
+  await rm(p.game, { recursive: true, force: true });
+  await mkdir(join(p.game, "chunks"), { recursive: true });
+  await writeFile(join(p.game, "manifest.json"), JSON.stringify(tiles.manifest));
+  for (const ch of tiles.chunks) await writeFile(join(p.game, "chunks", `${ch.cx}_${ch.cy}.json`), JSON.stringify(ch));
+  console.log(`Jogo: ${tiles.manifest.cols} × ${tiles.manifest.rows} tiles em ${tiles.chunks.length} chunks → ${rel(p.game)}/`);
 }
 
 export async function listCities(): Promise<string[]> {

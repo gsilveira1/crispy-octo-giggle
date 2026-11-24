@@ -8,7 +8,8 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "city": "pnpm --filter @bigriver/map-pipeline city"
+    "city": "pnpm --filter @bigriver/map-pipeline city",
+    "assets": "pnpm --filter @bigriver/assets build:assets"
   },
   "devDependencies": {
     "turbo": "^2.5.0",
