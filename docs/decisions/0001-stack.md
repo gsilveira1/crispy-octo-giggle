@@ -1,4 +1,4 @@
-# 0001. Stack do jogo (proposta, aguardando aprovação)
+# 0001. Stack do jogo (aprovada em 2026-11-24)
 
 ## Renderização do cliente
 
@@ -31,3 +31,7 @@ Persistência: **PostgreSQL + PostGIS** (consultas geográficas: NPCs perto do j
 ## Pipeline de mapas (passo 3, depois da aprovação)
 
 OSM (Overpass ou extrato da Geofabrik) → GeoJSON → projeção em metros (SIRGAS 2000 / UTM 22S, EPSG:31982) → rasterização em tilemaps por chunk (ruas, bairros, rios, rodovias, colisão) → arquivos estáticos consumidos pelo Phaser e pelo servidor.
+
+## Atualização (2026-11-24)
+
+A visão passou a ser **2D isométrica** (decisão do mapa de decisões, issue #1). Phaser 4 continua: suporta tilemaps isométricos, com chunks próprios e prédios como sprites (issue #4). O servidor usará Colyseus 0.18 (issue #7).
