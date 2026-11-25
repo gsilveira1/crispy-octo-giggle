@@ -34,4 +34,4 @@ OSM (Overpass ou extrato da Geofabrik) → GeoJSON → projeção em metros (SIR
 
 ## Atualização (2026-11-24)
 
-A visão passou a ser **2D isométrica** (decisão do mapa de decisões, issue #1). Phaser 4 continua: suporta tilemaps isométricos, com chunks próprios e prédios como sprites (issue #4). O servidor usará Colyseus 0.18 (issue #7).
+**Atualização 2026-11-25:** o cliente passou a ser 3D em Three.js (ADR 0002). Antes disso: a visão passou a ser **2D isométrica** (decisão do mapa de decisões, issue #1). Phaser 4 continua: suporta tilemaps isométricos, com chunks próprios e prédios como sprites (issue #4). O servidor usará Colyseus 0.18 (issue #7).
