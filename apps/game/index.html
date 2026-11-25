@@ -31,7 +31,13 @@
       .slot .key { position: absolute; top: 2px; left: 5px; font-size: 11px; font-weight: 700; color: #f0b44a; }
       .slot .nm { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: #ddd; }
       .slot .cd { position: absolute; inset: 0; background: conic-gradient(rgba(0,0,0,0.7) var(--p, 0deg), transparent 0); }
-      .slot.far .ico { color: #a44; }
+      .slot.linked { border-color: #ffd36a; box-shadow: 0 0 14px #ffb04a99, 0 4px 12px #000a; }
+      #combo { position: fixed; bottom: 118px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #f3d9a4; text-shadow: 0 0 8px #000, 0 2px 3px #000; opacity: 0; transition: opacity 0.3s; }
+      #combo.linked { color: #ffe060; }
+      #combos { position: fixed; top: 110px; left: 16px; font-size: 11px; line-height: 1.7; opacity: 0.75; text-shadow: 0 1px 2px #000; }
+      #combos small { display: block; opacity: 0.7; margin-bottom: 2px; }
+      kbd { display: inline-block; min-width: 14px; padding: 0 3px; margin-right: 2px; border: 1px solid #f0b44a88; border-radius: 3px; text-align: center; font: 700 10px system-ui; color: #f0b44a; background: #0006; }
+      canvas { cursor: crosshair; }
       .slot.used { animation: used 0.25s; }
       @keyframes used { 0% { border-color: #fff; transform: scale(0.92); } 100% { border-color: #6b5a3a; transform: scale(1); } }
       .float { position: fixed; transform: translate(-50%, -100%); font-weight: 800; font-size: 18px; color: #ffd27a; text-shadow: 0 0 4px #000, 0 2px 3px #000; pointer-events: none; white-space: nowrap; }
@@ -50,7 +56,7 @@
     <div id="vignette"></div>
     <div id="labels"></div>
     <div id="where" class="hud"><b>Taquara</b><span></span></div>
-    <div id="help" class="hud">WASD: andar · Shift: correr · Tab ou clique na cria: alvo · 1–4: habilidades · Espaço: esquiva · Q/E: girar câmera · roda: zoom</div>
+    <div id="help" class="hud">WASD: andar · Shift: correr · mouse: golpes e combos (mira no ponteiro) · 1–4: habilidades · Espaço: esquiva · Q/E: girar câmera · roda: zoom</div>
     <div id="credit" class="hud"></div>
     <div id="loading">CARREGANDO A CERRAÇÃO…</div>
     <script type="module" src="/src3d/main.ts"></script>

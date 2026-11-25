@@ -87,7 +87,7 @@ async function main() {
     composer.setSize(innerWidth, innerHeight);
   });
 
-  // Controles: teclas relativas à câmera, Q/E giram 45°, roda aproxima, clique e segure anda até o ponteiro.
+  // Controles: WASD anda (relativo à câmera), Q/E giram 45°, roda aproxima. O mouse só golpeia.
   const keys = new Set<string>();
   addEventListener("keydown", (e) => keys.add(e.code));
   addEventListener("keyup", (e) => keys.delete(e.code));
@@ -110,19 +110,16 @@ async function main() {
     distance = THREE.MathUtils.clamp(distance * (e.deltaY > 0 ? 1.1 : 0.9), 10, 70);
     e.preventDefault();
   }, { passive: false });
+  // Mouse: só golpes. Esquerdo = E, direito = D; a mira é o ponto do chão sob o ponteiro.
   const pointer = new THREE.Vector2();
-  let pointerDown = false;
   const canvasEl = renderer.domElement;
+  canvasEl.addEventListener("contextmenu", (e) => e.preventDefault());
   canvasEl.addEventListener("pointerdown", (e) => {
     pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-    // Clique numa cria escolhe o alvo; clique no chão anda.
-    if (combat.click(pointer, camera)) return;
-    combat.approach = false;
-    pointerDown = true;
-    canvasEl.setPointerCapture(e.pointerId);
+    if (e.button === 0) combat.press("E");
+    else if (e.button === 2) combat.press("D");
   });
   canvasEl.addEventListener("pointermove", (e) => pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1));
-  canvasEl.addEventListener("pointerup", () => (pointerDown = false));
   const ray = new THREE.Raycaster();
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const hit = new THREE.Vector3();
@@ -166,20 +163,18 @@ async function main() {
     if (!combat.alive) {
       // Caído: não anda até voltar ao refúgio.
     } else if (sx || sy) {
-      combat.approach = false;
       const l = Math.hypot(sx, sy);
       const fx = sx / l;
       const fy = sy / l;
       dir.set(fx * Math.cos(yaw) + fy * Math.sin(yaw), -fx * Math.sin(yaw) + fy * Math.cos(yaw));
-    } else if (pointerDown) {
-      ray.setFromCamera(pointer, camera);
-      if (ray.ray.intersectPlane(groundPlane, hit)) {
-        dir.set(hit.x - player.position.x, hit.z - player.position.z);
-        const l = dir.length();
-        if (l < 0.6) dir.set(0, 0);
-        else dir.multiplyScalar(Math.min(1, l / 2) / l);
-      }
-    } else combat.approachDir(dir);
+    }
+    // Mira: onde o ponteiro toca o chão, no máximo a 12 m do jogador.
+    ray.setFromCamera(pointer, camera);
+    if (ray.ray.intersectPlane(groundPlane, hit)) {
+      tmp.subVectors(hit, player.position).setY(0);
+      if (tmp.length() > 12) tmp.setLength(12);
+      combat.aim.copy(player.position).add(tmp).setY(0);
+    }
     player.update(dt, dir, keys.has("ShiftLeft") || keys.has("ShiftRight"), t);
     chunks.update(player.position.x, player.position.z);
     combat.update(dt, camera);
