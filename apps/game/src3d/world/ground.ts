@@ -20,7 +20,35 @@ const COLORS: Record<number, string> = {
   [Ground.lot]: "#5a5651",
 };
 /** Asfalto e água ficam brilhantes (molhados); o resto é fosco. */
-const ROUGH: Record<number, number> = { [Ground.road_major]: 0.38, [Ground.road_minor]: 0.45, [Ground.water]: 0.15 };
+const ROUGH: Record<number, number> = { [Ground.road_major]: 0.38, [Ground.road_minor]: 0.55, [Ground.water]: 0.15 };
+
+let cobble: THREE.Texture | undefined;
+/** Paralelepípedo de basalto (2 m × 2 m, repetível), multiplicado sobre a cor das ruas menores. */
+function cobbleTexture(): THREE.Texture {
+  if (cobble) return cobble;
+  const S = 256;
+  const [cv, g] = canvas(S, S);
+  g.fillStyle = "#1c1c1c";
+  g.fillRect(0, 0, S, S);
+  const rows = 14;
+  const h = S / rows;
+  for (let r = 0; r < rows; r++) {
+    let x = -hash(r, 1) * 20;
+    while (x < S) {
+      const w = h * (1.2 + hash(r, Math.round(x), 2) * 0.8);
+      const v = 0.45 + hash(r, Math.round(x), 3) * 0.25;
+      g.fillStyle = `rgb(${v * 255},${v * 250},${v * 245})`;
+      g.beginPath();
+      g.roundRect(x + 1.5, r * h + 1.5, w - 3, h - 3, 3);
+      g.fill();
+      g.fillStyle = "rgba(255,255,255,0.1)";
+      g.fillRect(x + 3, r * h + 2.5, w - 7, 2);
+      x += w;
+    }
+  }
+  cobble = canvasTexture(cv, false, true);
+  return cobble;
+}
 
 export const isRoad = (g: number | undefined) => g === Ground.road_major || g === Ground.road_minor;
 
@@ -74,7 +102,14 @@ export function groundMaterial(
         if (isRoad(at(c - 1, r))) g.fillRect(x, y, 2, PX);
         if (isRoad(at(c + 1, r))) g.fillRect(x + PX - 2, y, 2, PX);
       }
-      rg.fillStyle = `rgb(${Math.round((ROUGH[t] ?? 0.92) * 255)},${Math.round((ROUGH[t] ?? 0.92) * 255)},0)`;
+      // Boca de lobo (bueiro) no asfalto junto ao meio-fio.
+      if (isRoad(t) && v > 0.93) {
+        g.fillStyle = "#1a1b1d";
+        if (!isRoad(at(c, r - 1))) g.fillRect(x + 4, y + 1, 8, 3);
+        else if (!isRoad(at(c - 1, r))) g.fillRect(x + 1, y + 4, 3, 8);
+      }
+      // Azul = máscara do paralelepípedo (ruas menores), usada no shader de detalhe.
+      rg.fillStyle = `rgb(${Math.round((ROUGH[t] ?? 0.92) * 255)},${Math.round((ROUGH[t] ?? 0.92) * 255)},${t === Ground.road_minor ? 255 : 0})`;
       rg.fillRect(c * (PX / 4), r * (PX / 4), PX / 4, PX / 4);
     }
 
@@ -125,6 +160,23 @@ export function groundMaterial(
   const map = canvasTexture(cv);
   const roughnessMap = canvasTexture(rv, false);
   roughnessMap.magFilter = THREE.LinearFilter;
-  // O canal verde guarda a rugosidade (convenção do three.js).
-  return new THREE.MeshStandardMaterial({ map, roughnessMap, roughness: 1, metalness: 0 });
+  // O canal verde guarda a rugosidade (convenção do three.js); o azul marca onde vai paralelepípedo.
+  const m = new THREE.MeshStandardMaterial({ map, roughnessMap, roughness: 1, metalness: 0 });
+  m.onBeforeCompile = (s) => {
+    s.uniforms.cobble = { value: cobbleTexture() };
+    s.vertexShader = s.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vCobbleUv;")
+      .replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvCobbleUv = (modelMatrix * vec4(transformed, 1.0)).xz / 2.0;");
+    s.fragmentShader = s.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying vec2 vCobbleUv;\nuniform sampler2D cobble;")
+      .replace(
+        "#include <roughnessmap_fragment>",
+        `#include <roughnessmap_fragment>
+        float cobbleMask = texture2D(roughnessMap, vRoughnessMapUv).b;
+        vec3 cb = texture2D(cobble, vCobbleUv).rgb;
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * cb * 1.9, cobbleMask);
+        roughnessFactor = mix(roughnessFactor, 0.35 + (1.0 - cb.r) * 0.6, cobbleMask);`,
+      );
+  };
+  return m;
 }

@@ -16,14 +16,16 @@ pnpm --filter @bigriver/game dev      # http://localhost:5173 (3D)
 - **Mapa:** o mesmo `public/maps/<id>/` gerado por `pnpm city build <id>` (veja `data/cities/README.md`).
 - **Chunks** (`world/chunks.ts`): carrega os chunks num raio de 110 m em volta do jogador e descarrega o resto.
 - **Chão** (`world/ground.ts`): uma textura desenhada em canvas por chunk, com placas de concreto, meio-fio, faixa amarela no eixo das ruas com nome e sujeira. O asfalto tem rugosidade baixa para parecer molhado.
-- **Prédios** (`world/buildings.ts`): paredes extrudadas do contorno real (`levels × 2,8 m`), janelas com uma parte acesa e telhado plano. Todos os prédios de um chunk viram dois meshes. Um recorte pontilhado abre um buraco no que estiver entre a câmera e o jogador.
-- **Objetos** (`world/props.ts`): espalhados de forma determinística (o mesmo tile gera sempre o mesmo objeto): postes junto à rua, carros abandonados, barreiras, caixas e barris perto dos prédios, árvores em praças e matas. Bloqueiam a passagem.
+- **Prédios** (`world/buildings.ts`): quase todos vêm do Open Buildings sem tipo, então o estilo é inferido. Casa pequena e retangular ganha telhado de telha (quatro águas ou duas águas com oitão); prédio maior ganha laje com platibanda e caixa d'água azul; galpão grande ganha zinco. Fachadas em cores gastas, janelas com veneziana (parte acesa), porta virada para a rua e, em parte das fachadas de frente para a rua, comércio no térreo com vitrine, porta de enrolar, toldo e letreiro. Um recorte pontilhado abre um buraco no que estiver entre a câmera e o jogador.
+- **Rua** (`world/ground.ts`): ruas menores com paralelepípedo (textura de detalhe no shader), avenidas em asfalto molhado, meio-fio e bocas de lobo.
+- **Objetos** (`world/props.ts`): espalhados de forma determinística (o mesmo tile gera sempre o mesmo objeto): postes de concreto com luminária e fiação ligando os vizinhos, carros estacionados e abandonados, barreiras, caixas e barris perto dos prédios, árvores em praças e matas. Bloqueiam a passagem.
+- **Combate** (`combat/`): local, sem servidor. Bandos de 3 a 5 crias da Cerração (às vezes com uma graúda) em volta do refúgio; elas vagam, perseguem quem chega a 9 m, atacam no alcance, voltam para casa se forem longe e renascem em 25 s. Alvo com Tab ou clique na cria (clicar faz andar até ela); ataque automático no alcance. Habilidades provisórias do Cavaleiro (as definitivas saem da issue #20): 1 Talho, 2 Investida (avança e atordoa), 3 Redemoinho (área), 4 Chimarrão (cura). Ao cair, volta ao refúgio abalado (dano −30% por 20 s).
 - **Luz:** noite com lua fria (única luz com sombra), 8 luzes de poste reais que acompanham o jogador, poças de luz pintadas nos demais postes, lampião do personagem, névoa (`FogExp2`) e bloom.
 - **Personagem** (`world/player.ts`): provisório em low-poly (poncho, chapéu e lampião), 4 m/s, Shift corre.
 
 ## Controles
 
-WASD ou setas para andar (relativo à câmera), Shift para correr, Q/E giram a câmera 45°, roda do mouse para zoom, clique e segure para andar até o ponteiro (funciona no toque).
+WASD ou setas para andar (relativo à câmera), Shift para correr, Tab ou clique numa cria para escolher o alvo, 1–4 para as habilidades, Esc tira o alvo, Q/E giram a câmera 45°, roda do mouse para zoom, clique e segure no chão para andar até o ponteiro (funciona no toque).
 
 ## Limitações conhecidas
 
