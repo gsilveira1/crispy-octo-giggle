@@ -92,6 +92,21 @@ export class Survivors {
     });
   }
 
+  /** Põe um sobrevivente num lugar escolhido (builder de cenário). Devolve o objeto, para remover depois. */
+  async add(id: string, name: string, pos: THREE.Vector3, facing: number): Promise<THREE.Object3D | undefined> {
+    const asset = await loadModel(id, false).catch(() => undefined);
+    if (!asset) return undefined;
+    const npc = new Survivor(instantiate(asset), name, pos, facing);
+    this.list.push(npc);
+    this.group.add(npc.root);
+    return npc.root;
+  }
+
+  remove(root: THREE.Object3D) {
+    this.list = this.list.filter((n) => n.root !== root);
+    this.group.remove(root);
+  }
+
   positions() {
     return this.list.map((n) => ({ x: n.root.position.x, z: n.root.position.z }));
   }

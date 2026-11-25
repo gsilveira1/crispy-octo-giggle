@@ -1,0 +1,108 @@
+/* Casca do jogo: menu inicial, seleção de personagem, pausa e configurações. */
+#shell { --gold: #f0b44a; --cream: #f3d9a4; --ink: #e9e4d8; --panel: #15171cf0; --line: #6b5a3a; position: fixed; inset: 0; z-index: 30; display: none; color: var(--ink); font-family: system-ui, sans-serif; }
+#shell.open { display: block; }
+#shell.dim { background: #06080cb0; backdrop-filter: blur(2px); }
+#shell .screen { position: absolute; inset: 0; display: none; }
+#shell .screen.open { display: flex; }
+#shell button { font: inherit; color: var(--ink); cursor: pointer; }
+#shell h2 { margin: 0; font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+#shell h4 { margin: 18px 0 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cream); opacity: 0.8; }
+#shell .note { font-size: 12px; line-height: 1.5; opacity: 0.6; margin: 10px 0 0; }
+#shell kbd { font-size: 11px; }
+#shell .ghost { background: transparent; border: 1px solid #ffffff2a; border-radius: 6px; padding: 7px 12px; }
+#shell .ghost:hover { border-color: var(--gold); color: var(--gold); }
+#shell .ghost.wide { display: block; width: 100%; margin-top: 16px; }
+
+/* Botões grandes dos menus. */
+#shell .menu { display: flex; flex-direction: column; gap: 8px; width: min(340px, 100%); }
+#shell .menu button { text-align: left; padding: 12px 16px; background: linear-gradient(90deg, #1b1e24f0, #1b1e24b0); border: 1px solid #ffffff18; border-left: 3px solid var(--line); border-radius: 6px; font-size: 16px; font-weight: 600; letter-spacing: 0.04em; transition: transform 0.12s, border-color 0.12s; }
+#shell .menu button small { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; letter-spacing: 0; opacity: 0.6; }
+#shell .menu button:hover, #shell .menu button:focus-visible { border-left-color: var(--gold); transform: translateX(4px); outline: none; }
+#shell .menu button.primary { border-left-color: var(--gold); background: linear-gradient(90deg, #3a2a12f0, #1b1e24c0); }
+
+/* Menu inicial: logo à esquerda sobre o mundo girando. */
+#shell .s-title { flex-direction: column; justify-content: center; gap: 36px; padding: 0 8vw; background: linear-gradient(90deg, #07090ddd 0%, #07090d99 40%, transparent 75%); }
+#shell .logo small { font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.7; }
+#shell .logo h1 { margin: 6px 0 0; font: 800 clamp(44px, 8vw, 88px)/0.95 Georgia, "Times New Roman", serif; letter-spacing: 0.02em; color: var(--cream); text-shadow: 0 4px 30px #f0b44a40, 0 2px 4px #000; }
+#shell .logo p { margin: 4px 0 0 4px; font: italic 22px Georgia, serif; color: var(--gold); letter-spacing: 0.08em; }
+#shell .s-title footer { position: absolute; bottom: 16px; left: 8vw; font-size: 11px; opacity: 0.45; }
+
+/* Painéis centrais (pausa, configurações). */
+#shell .s-pause, #shell .s-settings { align-items: center; justify-content: center; padding: 16px; }
+#shell .panel { width: min(380px, 100%); max-height: calc(100% - 32px); overflow-y: auto; padding: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 20px 60px #000c; }
+#shell .panel.wide { width: min(640px, 100%); display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+#shell .panel .who { margin: 4px 0 16px; font-size: 13px; opacity: 0.7; }
+#shell .s-pause .menu { width: 100%; }
+#shell .panel header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px 12px; }
+#shell .tabs { display: flex; gap: 2px; padding: 0 16px; border-bottom: 1px solid #ffffff18; overflow-x: auto; }
+#shell .tabs button { padding: 9px 14px; background: none; border: 0; border-bottom: 2px solid transparent; font-size: 13px; letter-spacing: 0.04em; opacity: 0.7; white-space: nowrap; }
+#shell .tabs button.on { opacity: 1; color: var(--gold); border-bottom-color: var(--gold); }
+#shell .panel .body { padding: 8px 22px 18px; overflow-y: auto; flex: 1; min-height: 0; }
+#shell .panel footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; border-top: 1px solid #ffffff18; font-size: 11px; opacity: 0.85; }
+#shell .row { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 4px 0; border-bottom: 1px solid #ffffff0d; font-size: 14px; }
+#shell .row > span { flex: 1; min-width: 0; }
+#shell .row small { display: block; font-size: 11px; opacity: 0.55; }
+#shell .row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--gold); }
+#shell .row input[type="range"] { width: 160px; max-width: 40vw; accent-color: var(--gold); }
+#shell .row output { width: 44px; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--cream); }
+#shell .row > button:not(.key) { padding: 6px 12px; background: #2b2f38; border: 1px solid var(--line); border-radius: 5px; font-size: 12px; }
+#shell .key { min-width: 92px; padding: 6px 10px; background: #0008; border: 1px solid #f0b44a66; border-radius: 5px; font: 700 12px system-ui; color: var(--gold); }
+#shell .key:hover { border-color: var(--gold); }
+#shell .key.changed { background: #3a2a12; }
+#shell .key.wait { animation: wait 0.8s infinite alternate; color: #fff; }
+@keyframes wait { to { border-color: #fff; } }
+
+/* Seleção de personagem. */
+#shell .s-select { flex-direction: column; background: radial-gradient(ellipse at 50% 55%, #141a26f2, #05060afa 70%); }
+#shell .s-select > header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 16px 24px; }
+#shell .s-select > header button { justify-self: start; }
+#shell .sel { flex: 1; min-height: 0; display: grid; grid-template-columns: 220px 1fr 320px; gap: 24px; padding: 0 24px 24px; }
+#shell .classes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; align-self: center; }
+#shell .classes button { width: 100%; text-align: left; padding: 12px 14px; background: #1b1e24d0; border: 1px solid #ffffff18; border-left: 3px solid transparent; border-radius: 6px; }
+#shell .classes button b { display: block; font-size: 16px; }
+#shell .classes button small { font-size: 12px; opacity: 0.6; }
+#shell .classes button.on { border-left-color: var(--gold); background: #3a2a12d0; }
+#shell .classes button.on b { color: var(--gold); }
+#shell .stage { display: flex; flex-direction: column; align-items: center; min-width: 0; min-height: 0; }
+#shell .frame { position: relative; flex: 1; width: 100%; min-height: 220px; }
+#shell .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+#shell .frame .spin { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); pointer-events: none; }
+#shell .gender { display: flex; gap: 4px; margin-top: 8px; padding: 3px; background: #0008; border-radius: 20px; }
+#shell .gender button { padding: 6px 18px; background: none; border: 0; border-radius: 16px; font-size: 13px; }
+#shell .gender button.on { background: var(--gold); color: #1a1206; font-weight: 700; }
+#shell .cname { margin: 12px 0 4px; font-size: 18px; color: var(--cream); letter-spacing: 0.04em; }
+#shell .cdesc { margin: 0; max-width: 440px; text-align: center; font-size: 13px; line-height: 1.5; opacity: 0.75; }
+#shell .form { align-self: center; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+#shell .form h4:first-child { margin-top: 0; }
+#shell .origins { display: flex; flex-direction: column; gap: 6px; }
+#shell .origins button { text-align: left; padding: 10px 12px; background: #0006; border: 1px solid #ffffff18; border-radius: 6px; }
+#shell .origins button b { display: block; font-size: 14px; }
+#shell .origins button small { font-size: 12px; line-height: 1.4; opacity: 0.65; }
+#shell .origins button.on { border-color: var(--gold); background: #3a2a1280; }
+#shell .origins button.on b { color: var(--gold); }
+#shell .name { width: 100%; box-sizing: border-box; padding: 10px 12px; font: 15px system-ui; color: var(--ink); background: #0008; border: 1px solid #ffffff2a; border-radius: 6px; outline: none; }
+#shell .name:focus { border-color: var(--gold); }
+#shell .go { width: 100%; margin-top: 16px; padding: 12px; font-size: 16px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1a1206 !important; background: linear-gradient(#f6c25e, #d9952c); border: 0; border-radius: 6px; box-shadow: 0 4px 16px #f0b44a40; }
+#shell .go:hover { filter: brightness(1.1); }
+
+@media (max-width: 900px) {
+  #shell .sel { grid-template-columns: 1fr; grid-auto-rows: auto; overflow-y: auto; gap: 14px; padding: 0 16px 16px; }
+  #shell .classes { flex-direction: row; overflow-x: auto; }
+  #shell .classes li { flex: none; }
+  #shell .classes button { width: auto; }
+  #shell .frame { min-height: 300px; }
+  #shell .s-select > header { padding: 12px 16px; }
+  #shell .s-title { padding: 0 16px; background: linear-gradient(#07090ddd, #07090d99); }
+  #shell .s-title footer { left: 16px; }
+}
+
+/* O jogo por baixo: menus escondem o HUD; preferências escondem partes dele. */
+body[data-shell="title"] :is(#where, #help, #clock, #minimap, #combat-hud, #labels, #credit),
+body[data-shell="select"] :is(#where, #help, #clock, #minimap, #combat-hud, #labels, #credit) { display: none !important; }
+body[data-shell="builder"] :is(#combos, #bar, #combo, #tgt) { display: none !important; }
+body.hide-minimap #minimap, body.hide-clock #clock, body.hide-where #where, body.hide-help #help, body.hide-combos #combos,
+body.hide-damage .float, body.hide-enemyBars .ehp, body.hide-places .poi, body.hide-vignette #vignette { display: none !important; }
+#help b { color: #f0b44a; font-weight: 700; }
+
+#shell-toast { position: fixed; top: 22%; left: 50%; z-index: 25; transform: translate(-50%, 10px); max-width: calc(100% - 32px); padding: 10px 18px; font: italic 16px Georgia, serif; color: #f3d9a4; text-align: center; background: #07090dcc; border: 1px solid #6b5a3a; border-radius: 6px; opacity: 0; pointer-events: none; transition: opacity 0.5s, transform 0.5s; }
+#shell-toast.show { opacity: 1; transform: translate(-50%, 0); }

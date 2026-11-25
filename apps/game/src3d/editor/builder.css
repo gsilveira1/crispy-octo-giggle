@@ -1,0 +1,30 @@
+/* Painel do builder de cenário (lado esquerdo). */
+#builder { position: fixed; top: 14px; left: 16px; bottom: 14px; z-index: 22; width: 304px; display: none; flex-direction: column; gap: 8px; padding: 16px; overflow-y: auto; box-sizing: border-box; color: #e9e4d8; font: 13px system-ui, sans-serif; background: #15171cf2; border: 1px solid #6b5a3a; border-radius: 10px; box-shadow: 0 12px 40px #000a; }
+#builder.open { display: flex; }
+#builder header { display: flex; align-items: center; justify-content: space-between; }
+#builder h2 { margin: 0; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; color: #f0b44a; }
+#builder h3 { margin: 10px 0 0; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #f3d9a4; opacity: 0.8; }
+#builder p { margin: 0; line-height: 1.45; }
+#builder .b-hint, #builder .b-note { font-size: 12px; opacity: 0.65; }
+#builder .b-note code { font-size: 11px; color: #f3d9a4; }
+#builder button, #builder .b-import { font: 12px system-ui; color: #e9e4d8; background: #2b2f38; border: 1px solid #6b5a3a; border-radius: 6px; cursor: pointer; }
+#builder button:hover, #builder .b-import:hover { border-color: #f0b44a; }
+#builder .b-close { width: 28px; height: 28px; padding: 0; }
+#builder .b-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+#builder .b-grid button { position: relative; display: flex; align-items: center; gap: 6px; padding: 8px 26px 8px 8px; white-space: nowrap; overflow: hidden; text-align: left; background: #0006; border-color: #ffffff18; }
+#builder .b-grid button span { width: 20px; text-align: center; font-size: 16px; }
+#builder .b-grid button kbd { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); opacity: 0.6; }
+#builder .b-grid button.on { background: #3a2a12; border-color: #f0b44a; color: #f3d9a4; }
+#builder .b-opts label { display: flex; align-items: center; gap: 8px; }
+#builder .b-opts input[type="range"] { flex: 1; accent-color: #f0b44a; }
+#builder .b-opts select { flex: 1; padding: 5px; font: 13px system-ui; color: #e9e4d8; background: #0008; border: 1px solid #6b5a3a; border-radius: 5px; }
+#builder .b-stats { list-style: none; margin: 0; padding: 0; }
+#builder .b-stats li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #ffffff10; }
+#builder .b-stats li.empty { opacity: 0.55; border: 0; }
+#builder .b-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+#builder .b-actions > * { flex: 1 1 45%; padding: 8px; text-align: center; }
+#builder .b-clear { color: #ff9a8a !important; }
+#builder .b-status { min-height: 1em; font-size: 12px; color: #f3d9a4; }
+body[data-shell="builder"] canvas { cursor: copy; }
+body[data-shell="builder"] :is(#where, #combos, #help, #me) { display: none !important; }
+@media (max-width: 700px) { #builder { top: auto; left: 8px; right: 8px; width: auto; max-height: 45%; } }

@@ -32,6 +32,8 @@ export class Chunks3D {
   private roofs = new Map<number, number>();
   /** Raio carregado em volta do ponto seguido; cresce quando a câmera se afasta. */
   radiusM = 110;
+  /** Objetos do builder de cenário: altura de pisar por tile (tileKey); Infinity = não dá para subir. */
+  readonly extraHeights = new Map<number, number>();
 
   constructor(private scene: THREE.Scene, private manifest: TileManifest, private baseUrl: string) {
     const s = manifest.chunkSize * manifest.metersPerTile;
@@ -60,6 +62,7 @@ export class Chunks3D {
     const r = Math.floor(z / m);
     const g = this.groundAt(c, r);
     if (g === undefined || g === Ground.lot || BLOCKING_GROUND.includes(g)) return true;
+    if (this.extraHeights.has(tileKey(c, r))) return true;
     const s = this.manifest.chunkSize;
     return !!this.loaded.get(`${Math.floor(c / s)}_${Math.floor(r / s)}`)?.blocked.has(tileKey(c, r));
   };
@@ -82,6 +85,8 @@ export class Chunks3D {
     const ch = this.loaded.get(`${Math.floor(c / s)}_${Math.floor(r / s)}`);
     if (!ch) return Infinity;
     const k = tileKey(c, r);
+    const extra = this.extraHeights.get(k);
+    if (extra !== undefined) return extra;
     const prop = ch.heights.get(k);
     if (prop !== undefined) return prop;
     if (g === Ground.lot) return this.roofs.get(k) ?? Infinity;
