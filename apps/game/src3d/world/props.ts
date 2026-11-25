@@ -5,7 +5,12 @@ import { isRoad } from "./ground";
 import { canvas, canvasTexture, hash, radialTexture } from "./util";
 
 export type Lamp = { x: number; z: number; y: number };
-export type Props = { group: THREE.Group; lamps: Lamp[]; blocked: Set<number> };
+/** heights: altura (m) do topo do objeto em cada tile bloqueado; Infinity = não dá para subir (árvore, poste). */
+export type Props = { group: THREE.Group; lamps: Lamp[]; blocked: Set<number>; heights: Map<number, number> };
+
+/** Alturas de pisar em cima de um carro (teto e capô). */
+const CAR_ROOF = 1.62;
+const CAR_HOOD = 1.0;
 
 export const tileKey = (c: number, r: number) => c * 100000 + r;
 
@@ -18,6 +23,14 @@ type Kit = {
   trunkMat: THREE.Material; leafMat: THREE.Material;
 };
 let kit: Kit | undefined;
+let glow = 1;
+/** Força das luminárias (0 = apagadas de dia, 1 = noite). Chamado pelo céu a cada quadro. */
+export function setLampGlow(k: number) {
+  glow = k;
+  if (!kit) return;
+  (kit.headMat as THREE.MeshStandardMaterial).emissiveIntensity = 3 * k;
+  (kit.poolMat as THREE.MeshBasicMaterial).opacity = k;
+}
 const wireMat = new THREE.LineBasicMaterial({ color: 0x07080a });
 
 function makeKit(): Kit {
@@ -122,7 +135,10 @@ const CAR_COLORS = ["#6d1f1f", "#2c3e57", "#6b6b66", "#c9c4b8", "#1f3b2a", "#7a5
  * caixas e barris perto dos prédios, barreiras de bloqueio na rua (é depois da Cerração).
  */
 export function buildProps(ground: Uint8Array, size: number, ox: number, oy: number, mpt: number): Props {
-  kit ??= makeKit();
+  if (!kit) {
+    kit = makeKit();
+    setLampGlow(glow);
+  }
   const at = (c: number, r: number) => (c < 0 || r < 0 || c >= size || r >= size ? undefined : ground[r * size + c]);
   const walkable = (t: number | undefined) => t === Ground.ground || t === Ground.plaza || t === Ground.path;
   const lamps: (Inst & Lamp)[] = [];
@@ -132,6 +148,13 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
   const cars: Inst[] = [];
   const trees: Inst[] = [];
   const blocked = new Set<number>();
+  const heights = new Map<number, number>();
+  /** Marca o tile como ocupado; a altura fica a maior entre os objetos do tile. */
+  const block = (c: number, r: number, h: number) => {
+    const key = tileKey(c, r);
+    blocked.add(key);
+    heights.set(key, Math.max(heights.get(key) ?? 0, h));
+  };
   const CELL = 9;
   const best = new Map<number, { h: number; c: number; r: number; dir: [number, number] }>();
 
@@ -147,7 +170,7 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
         // Árvores nas praças e nas matas (copas em tons variados).
         const tone = new THREE.Color().setHSL(0.27 + hash(gc, gr, 21) * 0.06, 0.35, 0.22 + hash(gc, gr, 22) * 0.12);
         trees.push({ x: cx + (hash(gc, gr, 23) - 0.5), z: cz + (hash(gc, gr, 24) - 0.5), rot: h * 60, s: 0.8 + hash(gc, gr, 25) * 0.6, color: tone });
-        blocked.add(tileKey(gc, gr));
+        block(gc, gr, Infinity);
       } else if (walkable(t)) {
         const dirs: [number, number][] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         const road = dirs.find(([dc, dr]) => isRoad(at(c + dc, r + dr)));
@@ -162,7 +185,7 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
           const n = 1 + Math.floor(hash(gc, gr, 13) * 3);
           for (let i = 0; i < n; i++)
             list.push({ x: cx + (hash(gc, i, 14) - 0.5) * 1.2, z: cz + (hash(gr, i, 15) - 0.5) * 1.2, rot: hash(gc + i, gr, 16) * 6.28, s: 0.75 + hash(i, gc, 17) * 0.35 });
-          blocked.add(tileKey(gc, gr));
+          block(gc, gr, 1.0);
         }
       } else if (isRoad(t) && h > 0.97) {
         // Carro estacionado junto ao meio-fio, paralelo a ele.
@@ -170,7 +193,7 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
         if (side && isRoad(at(c - side[0], r - side[1]))) {
           const rot = side[0] !== 0 ? Math.PI / 2 : 0;
           cars.push({ x: cx + side[0] * 0.15 * mpt, z: cz + side[1] * 0.15 * mpt, rot: rot + (hash(gc, gr, 26) - 0.5) * 0.08, color: new THREE.Color(CAR_COLORS[Math.floor(hash(gc, gr, 27) * CAR_COLORS.length)]!) });
-          blocked.add(tileKey(gc, gr));
+          block(gc, gr, CAR_ROOF);
         }
       } else if (isRoad(t) && h < 0.008) {
         const alongX = isRoad(at(c - 1, r)) && isRoad(at(c + 1, r));
@@ -181,10 +204,13 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
           if (k < 0.75) {
             cars.push({ x: cx, z: cz, rot, color: new THREE.Color(CAR_COLORS[Math.floor(hash(gc, gr, 20) * CAR_COLORS.length)]!) });
             const [dc, dr] = alongX && !alongZ ? [1, 0] : [0, 1];
-            blocked.add(tileKey(gc, gr)).add(tileKey(gc + dc, gr + dr)).add(tileKey(gc - dc, gr - dr));
+            // Teto no meio, capô e porta-malas nas pontas.
+            block(gc, gr, CAR_ROOF);
+            block(gc + dc, gr + dr, CAR_HOOD);
+            block(gc - dc, gr - dr, CAR_HOOD);
           } else {
             barriers.push({ x: cx, z: cz, rot: rot + Math.PI / 2 });
-            blocked.add(tileKey(gc, gr));
+            block(gc, gr, 0.85);
           }
         }
       }
@@ -194,7 +220,7 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
     const z = (oy + r + 0.5 + dir[1] * 0.35) * mpt;
     const rot = Math.atan2(-dir[1], dir[0]);
     lamps.push({ x, z, y: 6.2, rot });
-    blocked.add(tileKey(ox + c, oy + r));
+    block(ox + c, oy + r, Infinity);
   }
 
   const k = kit;
@@ -255,5 +281,5 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
     wg.setAttribute("position", new THREE.Float32BufferAttribute(wire, 3));
     group.add(new THREE.LineSegments(wg, wireMat));
   }
-  return { group, lamps: lampOut, blocked };
+  return { group, lamps: lampOut, blocked, heights };
 }

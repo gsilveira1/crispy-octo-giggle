@@ -49,6 +49,37 @@
       .ehp i { display: block; height: 100%; background: #d0503a; }
       .ehp.sel { outline: 1px solid #ffb04a; }
       #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #f0b44a; letter-spacing: 0.2em; font-size: 14px; background: #10141b; transition: opacity 0.6s; }
+      #clock { position: fixed; top: 222px; right: 16px; width: 196px; text-align: center; font-size: 12px; color: #e9e4d8; text-shadow: 0 1px 2px #000; pointer-events: none; }
+      #clock b { font-size: 15px; color: #f0b44a; margin-right: 4px; }
+      #clock em { font-style: normal; color: #b9c6d2; }
+      #clock small { opacity: 0.6; }
+      #minimap { position: fixed; top: 14px; right: 16px; width: 196px; height: 196px; }
+      #minimap canvas { width: 196px; height: 196px; border-radius: 50%; box-shadow: 0 0 0 2px #6b5a3a, 0 0 0 4px #0009, 0 6px 18px #000a; cursor: pointer; }
+      #minimap .north { position: absolute; left: 50%; top: 50%; font: 800 11px system-ui; color: #f0b44a; text-shadow: 0 0 3px #000, 0 0 2px #000; pointer-events: none; }
+      #minimap .mm-btns { position: absolute; left: -30px; top: 6px; display: flex; flex-direction: column; gap: 4px; }
+      #minimap button, #bigmap button { font: 700 13px system-ui; color: #f3d9a4; background: #1b1e24e6; border: 1px solid #6b5a3a; border-radius: 5px; cursor: pointer; }
+      #minimap .mm-btns button { width: 24px; height: 24px; padding: 0; }
+      #minimap button:hover, #bigmap button:hover { background: #2b2f38; }
+      #bigmap { position: fixed; inset: 0; display: none; background: #0b0c0fee; z-index: 20; }
+      #bigmap.open { display: flex; }
+      #bigmap canvas { flex: 1; min-width: 0; height: 100%; cursor: crosshair; }
+      #bigmap aside { width: 250px; padding: 18px 16px; overflow-y: auto; background: #15171cf2; border-left: 1px solid #6b5a3a; color: #e9e4d8; font-size: 13px; }
+      #bigmap h2 { margin: 0 0 6px; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase; color: #f0b44a; }
+      #bigmap h3 { margin: 18px 0 6px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #f3d9a4; }
+      #bigmap .hint { margin: 0; font-size: 12px; opacity: 0.7; line-height: 1.45; }
+      #bigmap ol { list-style: none; margin: 0; padding: 0; }
+      #bigmap li { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #ffffff12; }
+      #bigmap li.empty { opacity: 0.6; border: 0; }
+      #bigmap li i { width: 12px; height: 12px; border-radius: 50%; flex: none; cursor: pointer; box-shadow: 0 0 0 1px #000; }
+      #bigmap li input { flex: 1; min-width: 0; font: 13px system-ui; color: #e9e4d8; background: transparent; border: 1px solid transparent; border-radius: 3px; padding: 2px 4px; }
+      #bigmap li input:focus { border-color: #6b5a3a; outline: none; background: #0006; }
+      #bigmap li .dist { font-size: 11px; opacity: 0.65; white-space: nowrap; }
+      #bigmap li button { width: 22px; height: 22px; padding: 0; }
+      #bigmap aside > button { display: block; width: 100%; margin-top: 10px; padding: 7px; font-size: 12px; }
+      .street { position: fixed; left: 0; top: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; color: #ece7da; white-space: nowrap; pointer-events: none; text-shadow: 0 0 4px #000, 0 0 2px #000, 0 1px 2px #000; opacity: 0.9; }
+      .marker { position: fixed; left: 0; top: 0; padding: 2px 7px; font-size: 11px; font-weight: 700; color: #111; background: var(--c); border-radius: 10px; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 6px #000a; }
+      .marker.edge { opacity: 0.85; }
+      @media (max-width: 700px) { #bigmap aside { position: absolute; bottom: 0; left: 0; right: 0; width: auto; max-height: 40%; border-left: 0; border-top: 1px solid #6b5a3a; } #minimap { transform: scale(0.7); transform-origin: top right; } #clock { top: 160px; width: 140px; } }
     </style>
   </head>
   <body>
@@ -56,7 +87,8 @@
     <div id="vignette"></div>
     <div id="labels"></div>
     <div id="where" class="hud"><b>Taquara</b><span></span></div>
-    <div id="help" class="hud">WASD: andar · Shift: correr · mouse: golpes e combos (mira no ponteiro) · 1–4: habilidades · Espaço: esquiva · Q/E: girar câmera · roda: zoom</div>
+    <div id="clock"></div>
+    <div id="help" class="hud">WASD: andar · Shift: correr · mouse: golpes e combos (mira no ponteiro) · 1–4: habilidades · Espaço: pular · F: cambalhota · Q/E: girar câmera · roda/Z: zoom até a cidade toda<br>Minimapa: clique marca ponto, botão direito apaga · M: mapa da cidade · N: nomes das ruas · T: próxima fase do dia · C: cerração</div>
     <div id="credit" class="hud"></div>
     <div id="loading">CARREGANDO A CERRAÇÃO…</div>
     <script type="module" src="/src3d/main.ts"></script>

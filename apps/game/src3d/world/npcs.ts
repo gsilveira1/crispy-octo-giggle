@@ -92,6 +92,10 @@ export class Survivors {
     });
   }
 
+  positions() {
+    return this.list.map((n) => ({ x: n.root.position.x, z: n.root.position.z }));
+  }
+
   update(dt: number, player: THREE.Vector3) {
     for (const n of this.list) n.update(dt, player);
   }
