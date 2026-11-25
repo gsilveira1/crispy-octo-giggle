@@ -8,7 +8,7 @@ Os prompts estão em **inglês** porque as ferramentas respondem melhor nessa l�
 
 ## Fluxo
 
-1. **Conceito (recomendado):** gere uma imagem de frente em pose A com o mesmo prompt (Stable Diffusion ou desenho próprio). Image-to-3D a partir de uma imagem boa dá resultado bem melhor que só texto.
+1. **Conceito (recomendado):** gere uma imagem de frente em pose A com o mesmo prompt (Stable Diffusion ou desenho próprio). Image-to-3D a partir de uma imagem boa dá resultado bem melhor que só texto. Os conceitos prontos ficam em [`conceitos/`](conceitos/) com o mesmo `<id>`.
 2. **Modelo:** Meshy Pro, *Image to 3D* (ou *Text to 3D* com o prompt daqui). Gere 4 variações e escolha a de silhueta mais clara vista de cima.
 3. **Malha:** *Remesh* para a contagem de triângulos da tabela abaixo, quads quando possível.
 4. **Esqueleto e animação:** humanoides com *Auto-Rig* da Meshy ou Mixamo; criaturas com *Smart Rig*. Animações na lista de cada personagem.
@@ -196,6 +196,26 @@ Pessoas e comércios **inventados** (issue #6). Gere um modelo base de cada arqu
 | `npc-guarda` | guarda municipal | `A municipal guard from a small Brazilian town, dark navy uniform with a reflective vest, cap, radio on the shoulder, flashlight, tired face.` |
 | `npc-agricultor` | colono de origem alemã | `A farmer of German descent from the Taquara region, flat cap, plaid flannel shirt, suspenders, work trousers, rubber boots, strong hands, ruddy face.` |
 | `npc-crianca` | criança perdida (resgate) | `A child of about eight from a small Brazilian town, oversized yellow raincoat, rubber boots, holding a small flashlight, scared but brave expression.` |
+
+## Conceitos prontos
+
+As imagens de frente em pose A estão em [`conceitos/<id>.jpg`](conceitos/), uma por `<id>` deste arquivo (28 no total). São a entrada do *Image to 3D*.
+
+| grupo | ids |
+| --- | --- |
+| Classes | `class-peao`, `class-peao-f`, `class-benzedeira`, `class-benzedeira-m`, `class-tropeiro`, `class-tropeiro-f`, `class-cavaleiro`, `class-cavaleiro-f`, `class-feiticeiro`, `class-feiticeiro-f` |
+| Crias e chefe | `enemy-cria`, `enemy-cria-grauda`, `enemy-cria-rasteira`, `boss-lobisomem` |
+| Vultos e lenda | `vulto-bento`, `vulto-zumbi`, `vulto-garibaldi`, `npc-lanceiro`, `lenda-negrinho`, `lenda-negrinho-baio` |
+| Sobreviventes | `npc-comerciante`, `npc-padre`, `npc-enfermeira`, `npc-tradicionalista`, `npc-estudante`, `npc-guarda`, `npc-agricultor`, `npc-crianca` |
+
+Cuidados antes de gerar o 3D:
+
+- **`class-tropeiro`** está mais fotográfico que o resto (rosto e tecido realistas, fundo diferente). Vale gerar de novo com o estilo comum para não destoar da `class-tropeiro-f`.
+- **Crias:** os olhos e a fumaça são feitos no jogo. Se o Image to 3D tentar modelar a fumaça em volta da `enemy-cria-grauda` e da `enemy-cria-rasteira`, apague a fumaça da imagem antes (ou use Text to 3D com o prompt).
+- **`lenda-negrinho-baio`** e **`enemy-cria-rasteira`** são quadrúpedes: esqueleto pelo *Smart Rig*, não Mixamo.
+- **Lobisomem:** a camisa xadrez e o lenço batem com o **`npc-agricultor`**. Se ele for o sobrevivente que vira lobisomem, use a mesma textura de camisa e lenço nos dois modelos (o lenço do agricultor é vermelho liso; o do lobisomem, vermelho e branco desbotado: escolher um).
+- Armas e objetos (facão, lança, cuia, laço, lampião) saem num objeto separado no Blender, como diz o passo 5.
+- Ao subir no Meshy, plano pago e privado, nunca na comunidade.
 
 ---
 
