@@ -1,0 +1,23 @@
+{
+  "id": "npc-lanceiro",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-lanceiro.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21452-23ef-7020-805d-4abd06728578",
+      "thumbnail": "npc-lanceiro.v1.png",
+      "rigging_task": "01a21453-9f11-7655-b1c4-d16e807b116c"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 220
+  },
+  "picked": 1
+}

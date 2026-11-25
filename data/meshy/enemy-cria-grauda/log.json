@@ -1,0 +1,23 @@
+{
+  "id": "enemy-cria-grauda",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/enemy-cria-grauda.jpg",
+  "spec": {
+    "polycount": 6000,
+    "rig": "humanoid",
+    "height": 2
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21446-21a6-7780-9788-26df39ec66fe",
+      "thumbnail": "enemy-cria-grauda.v1.png",
+      "rigging_task": "01a21447-c463-776c-bf94-ac4c631af7e5"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 840
+  },
+  "picked": 1
+}

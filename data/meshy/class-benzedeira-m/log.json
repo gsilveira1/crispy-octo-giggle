@@ -1,0 +1,23 @@
+{
+  "id": "class-benzedeira-m",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/class-benzedeira-m.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144c-b07d-77fc-8505-da71ee214469",
+      "thumbnail": "class-benzedeira-m.v1.png",
+      "rigging_task": "01a2144e-56fb-7435-a813-8dfacce8ef81"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 500
+  },
+  "picked": 1
+}

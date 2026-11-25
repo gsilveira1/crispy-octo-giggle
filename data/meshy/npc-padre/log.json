@@ -1,0 +1,23 @@
+{
+  "id": "npc-padre",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-padre.jpg",
+  "spec": {
+    "polycount": 6500,
+    "rig": "humanoid",
+    "height": 1.75
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21447-a698-76e0-8d51-314fcae61566",
+      "thumbnail": "npc-padre.v1.png",
+      "rigging_task": "01a21448-f8dc-7056-9408-afbd7ab3a706"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 775
+  },
+  "picked": 1
+}

@@ -155,7 +155,12 @@ async function pick(id, v) {
   const out = join(MODELS, `${id}.glb`);
   const tmp = join(dir, `${id}.v${v}.resized.glb`);
   const cli = (...a) => execFileSync('gltf-transform', a, { stdio: 'inherit' });
-  cli('resize', src, tmp, '--width', '1024', '--height', '1024');
+  if (src === rigged) cli('resize', src, tmp, '--width', '1024', '--height', '1024');
+  else {
+    // Sem esqueleto a Meshy entrega o modelo centrado na origem: põe os pés em Y = 0.
+    cli('center', src, tmp, '--pivot', 'below');
+    cli('resize', tmp, tmp, '--width', '1024', '--height', '1024');
+  }
   cli('webp', tmp, out);
   const { unlink } = await import('node:fs/promises');
   await unlink(tmp);

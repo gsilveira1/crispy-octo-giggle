@@ -1,0 +1,23 @@
+{
+  "id": "npc-tradicionalista",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-tradicionalista.jpg",
+  "spec": {
+    "polycount": 6500,
+    "rig": "humanoid",
+    "height": 1.75
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144b-551a-763d-bea0-fb97507c2cc9",
+      "thumbnail": "npc-tradicionalista.v1.png",
+      "rigging_task": "01a2144c-a6b9-77b6-9432-0e64116377f3"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 570
+  },
+  "picked": 1
+}
