@@ -18,14 +18,17 @@ type Kit = {
   trunkMat: THREE.Material; leafMat: THREE.Material;
 };
 let kit: Kit | undefined;
+const wireMat = new THREE.LineBasicMaterial({ color: 0x07080a });
 
 function makeKit(): Kit {
-  // Poste: haste, braço e luminária; a cabeça fica 1,4 m para o lado da rua (+x local).
-  const pole = new THREE.CylinderGeometry(0.06, 0.09, 4.6, 6).translate(0, 2.3, 0);
-  const arm = new THREE.BoxGeometry(1.5, 0.08, 0.08).translate(0.7, 4.5, 0);
-  const base = new THREE.CylinderGeometry(0.16, 0.2, 0.4, 6).translate(0, 0.2, 0);
-  const lampPole = mergeGeometries([pole, arm, base])!;
-  const lampHead = new THREE.BoxGeometry(0.55, 0.16, 0.3).translate(1.4, 4.42, 0);
+  // Poste de concreto da rede elétrica (seção quadrada, 8 m), com cruzeta, transformador às vezes
+  // e braço de luminária virado para a rua (+x local). A cabeça fica 1,6 m para o lado da rua.
+  const pole = new THREE.CylinderGeometry(0.09, 0.15, 8.2, 4).rotateY(Math.PI / 4).translate(0, 4.1, 0);
+  const cross = new THREE.BoxGeometry(1.8, 0.1, 0.1).translate(0, 7.7, 0);
+  const insul = [-0.75, 0, 0.75].map((x) => new THREE.CylinderGeometry(0.04, 0.05, 0.2, 5).translate(x, 7.85, 0));
+  const arm = new THREE.CylinderGeometry(0.035, 0.035, 1.8, 5).rotateZ(Math.PI / 2 - 0.25).translate(0.85, 6.1, 0.12);
+  const lampPole = mergeGeometries([pole, cross, ...insul, arm])!;
+  const lampHead = new THREE.BoxGeometry(0.6, 0.14, 0.28).translate(1.65, 6.28, 0);
   const pool = new THREE.PlaneGeometry(11, 11).rotateX(-Math.PI / 2);
 
   const [wc, wg] = canvas(64, 64);
@@ -82,7 +85,7 @@ function makeKit(): Kit {
     ])!,
     trunkMat: new THREE.MeshStandardMaterial({ color: 0x3a2a1e, roughness: 0.9 }),
     leafMat: new THREE.MeshStandardMaterial({ color: 0x3f5f34, roughness: 0.85, flatShading: true }),
-    metal: new THREE.MeshStandardMaterial({ color: 0x2b2e33, roughness: 0.5, metalness: 0.7 }),
+    metal: new THREE.MeshStandardMaterial({ color: 0x8b8780, roughness: 0.9, metalness: 0 }),
     headMat: new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0xffb060, emissiveIntensity: 3 }),
     poolMat: new THREE.MeshBasicMaterial({ map: radialTexture("rgba(255,170,80,0.22)", "rgba(255,150,60,0)"), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
     crateMat: new THREE.MeshStandardMaterial({ map: canvasTexture(wc), roughness: 0.9 }),
@@ -129,7 +132,7 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
   const cars: Inst[] = [];
   const trees: Inst[] = [];
   const blocked = new Set<number>();
-  const CELL = 7;
+  const CELL = 9;
   const best = new Map<number, { h: number; c: number; r: number; dir: [number, number] }>();
 
   for (let r = 0; r < size; r++)
@@ -161,6 +164,14 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
             list.push({ x: cx + (hash(gc, i, 14) - 0.5) * 1.2, z: cz + (hash(gr, i, 15) - 0.5) * 1.2, rot: hash(gc + i, gr, 16) * 6.28, s: 0.75 + hash(i, gc, 17) * 0.35 });
           blocked.add(tileKey(gc, gr));
         }
+      } else if (isRoad(t) && h > 0.97) {
+        // Carro estacionado junto ao meio-fio, paralelo a ele.
+        const side = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as [number, number][]).find(([dc, dr]) => !isRoad(at(c + dc, r + dr)) && at(c + dc, r + dr) !== undefined);
+        if (side && isRoad(at(c - side[0], r - side[1]))) {
+          const rot = side[0] !== 0 ? Math.PI / 2 : 0;
+          cars.push({ x: cx + side[0] * 0.15 * mpt, z: cz + side[1] * 0.15 * mpt, rot: rot + (hash(gc, gr, 26) - 0.5) * 0.08, color: new THREE.Color(CAR_COLORS[Math.floor(hash(gc, gr, 27) * CAR_COLORS.length)]!) });
+          blocked.add(tileKey(gc, gr));
+        }
       } else if (isRoad(t) && h < 0.008) {
         const alongX = isRoad(at(c - 1, r)) && isRoad(at(c + 1, r));
         const alongZ = isRoad(at(c, r - 1)) && isRoad(at(c, r + 1));
@@ -182,14 +193,14 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
     const x = (ox + c + 0.5 + dir[0] * 0.35) * mpt;
     const z = (oy + r + 0.5 + dir[1] * 0.35) * mpt;
     const rot = Math.atan2(-dir[1], dir[0]);
-    lamps.push({ x, z, y: 4.4, rot });
+    lamps.push({ x, z, y: 6.2, rot });
     blocked.add(tileKey(ox + c, oy + r));
   }
 
   const k = kit;
   const group = new THREE.Group();
   const lampHeads = lamps.map((l) => ({ ...l }));
-  const pools = lamps.map((l) => ({ x: l.x + Math.cos(l.rot) * 1.4, z: l.z - Math.sin(l.rot) * 1.4, rot: 0 }));
+  const pools = lamps.map((l) => ({ x: l.x + Math.cos(l.rot) * 1.6, z: l.z - Math.sin(l.rot) * 1.6, rot: 0, s: 1.3 }));
   const meshes = [
     instanced(k.lampPole, k.metal, lamps),
     instanced(k.lampHead, k.headMat, lampHeads, false),
@@ -209,6 +220,40 @@ export function buildProps(ground: Uint8Array, size: number, ox: number, oy: num
     pool.receiveShadow = false;
     pool.renderOrder = 1;
   }
-  const lampOut = lamps.map((l) => ({ x: l.x + Math.cos(l.rot) * 1.4, z: l.z - Math.sin(l.rot) * 1.4, y: l.y }));
+  const lampOut = lamps.map((l) => ({ x: l.x + Math.cos(l.rot) * 1.6, z: l.z - Math.sin(l.rot) * 1.6, y: l.y }));
+  // Fiação: cada poste liga nos dois vizinhos mais próximos (até 24 m), três fios com barriga.
+  const wire: number[] = [];
+  const linked = new Set<string>();
+  for (let i = 0; i < lamps.length; i++) {
+    const a = lamps[i]!;
+    const near = lamps
+      .map((b, j) => ({ j, d: Math.hypot(b.x - a.x, b.z - a.z) }))
+      .filter((o) => o.j !== i && o.d < 24)
+      .sort((u, v) => u.d - v.d)
+      .slice(0, 2);
+    for (const { j, d } of near) {
+      const k = i < j ? `${i}_${j}` : `${j}_${i}`;
+      if (linked.has(k)) continue;
+      linked.add(k);
+      const b = lamps[j]!;
+      for (const [y, sag] of [[7.95, 0.5], [7.95, 0.55], [7.2, 0.7]] as const) {
+        const off = y === 7.2 ? 0 : sag === 0.5 ? -0.75 : 0.75;
+        // Desloca os fios ao longo da cruzeta (eixo x local do poste, perpendicular à rua).
+        const ox = Math.cos(a.rot) * off;
+        const oz = -Math.sin(a.rot) * off;
+        const N = 8;
+        for (let s2 = 0; s2 < N; s2++) {
+          for (const t of [s2 / N, (s2 + 1) / N]) {
+            wire.push(a.x + ox + (b.x - a.x) * t, y - Math.sin(Math.PI * t) * sag * (d / 20), a.z + oz + (b.z - a.z) * t);
+          }
+        }
+      }
+    }
+  }
+  if (wire.length) {
+    const wg = new THREE.BufferGeometry();
+    wg.setAttribute("position", new THREE.Float32BufferAttribute(wire, 3));
+    group.add(new THREE.LineSegments(wg, wireMat));
+  }
   return { group, lamps: lampOut, blocked };
 }

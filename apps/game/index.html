@@ -16,6 +16,38 @@
       #help { bottom: 12px; left: 16px; font-size: 12px; opacity: 0.7; }
       #credit { bottom: 12px; right: 16px; font-size: 11px; opacity: 0.55; }
       .poi { position: fixed; transform: translate(-50%, -100%); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f3d9a4; text-shadow: 0 0 6px #000, 0 1px 2px #000; white-space: nowrap; pointer-events: none; }
+      #combat-hud { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, sans-serif; color: #eee; }
+      #hurt { position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(160, 0, 0, 0.55) 100%); opacity: 0; transition: opacity 0.35s; }
+      #me { position: fixed; top: 64px; left: 16px; width: 240px; font-size: 12px; text-shadow: 0 1px 2px #000; }
+      #tgt { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); width: 280px; text-align: center; font-size: 13px; letter-spacing: 0.05em; text-shadow: 0 1px 2px #000; display: none; }
+      .bar { position: relative; height: 14px; margin-top: 4px; background: #000a; border: 1px solid #0008; border-radius: 3px; overflow: hidden; }
+      .bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#5fbf5a, #2f7a2c); transition: width 0.15s; }
+      .bar.enemy i { background: linear-gradient(#d0503a, #7a1f12); }
+      .bar span { position: absolute; inset: 0; font-size: 10px; line-height: 14px; text-align: center; }
+      #status { position: fixed; top: 30%; left: 50%; transform: translateX(-50%); font-size: 20px; letter-spacing: 0.08em; color: #f0b44a; text-shadow: 0 2px 6px #000; opacity: 0; transition: opacity 0.5s; }
+      #bar { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+      .slot { position: relative; width: 62px; height: 62px; background: linear-gradient(#2b2f38, #15181e); border: 2px solid #6b5a3a; border-radius: 8px; box-shadow: 0 4px 12px #000a; overflow: hidden; }
+      .slot .ico { position: absolute; inset: 0; display: grid; place-items: center; font-size: 26px; color: #f3d9a4; padding-bottom: 10px; }
+      .slot .key { position: absolute; top: 2px; left: 5px; font-size: 11px; font-weight: 700; color: #f0b44a; }
+      .slot .nm { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: #ddd; }
+      .slot .cd { position: absolute; inset: 0; background: conic-gradient(rgba(0,0,0,0.7) var(--p, 0deg), transparent 0); }
+      .slot.linked { border-color: #ffd36a; box-shadow: 0 0 14px #ffb04a99, 0 4px 12px #000a; }
+      #combo { position: fixed; bottom: 118px; left: 50%; transform: translateX(-50%); font-size: 18px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #f3d9a4; text-shadow: 0 0 8px #000, 0 2px 3px #000; opacity: 0; transition: opacity 0.3s; }
+      #combo.linked { color: #ffe060; }
+      #combos { position: fixed; top: 110px; left: 16px; font-size: 11px; line-height: 1.7; opacity: 0.75; text-shadow: 0 1px 2px #000; }
+      #combos small { display: block; opacity: 0.7; margin-bottom: 2px; }
+      kbd { display: inline-block; min-width: 14px; padding: 0 3px; margin-right: 2px; border: 1px solid #f0b44a88; border-radius: 3px; text-align: center; font: 700 10px system-ui; color: #f0b44a; background: #0006; }
+      canvas { cursor: crosshair; }
+      .slot.used { animation: used 0.25s; }
+      @keyframes used { 0% { border-color: #fff; transform: scale(0.92); } 100% { border-color: #6b5a3a; transform: scale(1); } }
+      .float { position: fixed; transform: translate(-50%, -100%); font-weight: 800; font-size: 18px; color: #ffd27a; text-shadow: 0 0 4px #000, 0 2px 3px #000; pointer-events: none; white-space: nowrap; }
+      .float.crit { color: #ffef5a; font-size: 26px; }
+      .float.hurt { color: #ff5a4a; font-size: 16px; }
+      .float.heal { color: #7dff8a; }
+      .float.info { color: #e8e4d8; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+      .ehp { position: fixed; width: 46px; height: 5px; transform: translate(-50%, -100%); background: #000b; border: 1px solid #000; }
+      .ehp i { display: block; height: 100%; background: #d0503a; }
+      .ehp.sel { outline: 1px solid #ffb04a; }
       #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #f0b44a; letter-spacing: 0.2em; font-size: 14px; background: #10141b; transition: opacity 0.6s; }
     </style>
   </head>
@@ -24,7 +56,7 @@
     <div id="vignette"></div>
     <div id="labels"></div>
     <div id="where" class="hud"><b>Taquara</b><span></span></div>
-    <div id="help" class="hud">WASD ou setas: andar · Shift: correr · Q/E: girar câmera · roda: zoom · clique e segure: andar até o ponteiro</div>
+    <div id="help" class="hud">WASD: andar · Shift: correr · mouse: golpes e combos (mira no ponteiro) · 1–4: habilidades · Espaço: esquiva · Q/E: girar câmera · roda: zoom</div>
     <div id="credit" class="hud"></div>
     <div id="loading">CARREGANDO A CERRAÇÃO…</div>
     <script type="module" src="/src3d/main.ts"></script>

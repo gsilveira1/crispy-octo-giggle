@@ -6,6 +6,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import type { TileManifest } from "@bigriver/shared";
 import { occlusion } from "./world/buildings";
 import { Chunks3D } from "./world/chunks";
+import { Combat } from "./combat/combat";
 import { Player } from "./world/player";
 import { hash, radialTexture } from "./world/util";
 
@@ -54,6 +55,10 @@ async function main() {
   await chunks.preload(sc * m, sr * m);
   const player = new Player(sc * m, sr * m, chunks.isBlocked);
   scene.add(player.root);
+  player.attachTrail(scene);
+  const refuge = player.position.clone();
+  const combat = new Combat(scene, player, refuge, chunks.isBlocked);
+  combat.spawnPacks(refuge);
   // Luz de recorte fraca vinda da câmera, só para o personagem ler bem contra o fundo escuro.
   const rim = new THREE.PointLight(0xb8c8ff, 3, 6, 1.5);
   scene.add(rim);
@@ -82,7 +87,7 @@ async function main() {
     composer.setSize(innerWidth, innerHeight);
   });
 
-  // Controles: teclas relativas à câmera, Q/E giram 45°, roda aproxima, clique e segure anda até o ponteiro.
+  // Controles: WASD anda (relativo à câmera), Q/E giram 45°, roda aproxima. O mouse só golpeia.
   const keys = new Set<string>();
   addEventListener("keydown", (e) => keys.add(e.code));
   addEventListener("keyup", (e) => keys.delete(e.code));
@@ -91,6 +96,13 @@ async function main() {
   let yaw = 0;
   let yawTarget = 0;
   addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      // Esquiva na direção das teclas (ou para a frente).
+      const ix = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
+      const iy = (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
+      if (combat.alive) player.dodge(new THREE.Vector2(ix * Math.cos(yaw) + iy * Math.sin(yaw), -ix * Math.sin(yaw) + iy * Math.cos(yaw)));
+    }
     if (e.code === "KeyQ") yawTarget -= Math.PI / 4;
     if (e.code === "KeyE") yawTarget += Math.PI / 4;
   });
@@ -98,16 +110,16 @@ async function main() {
     distance = THREE.MathUtils.clamp(distance * (e.deltaY > 0 ? 1.1 : 0.9), 10, 70);
     e.preventDefault();
   }, { passive: false });
+  // Mouse: só golpes. Esquerdo = E, direito = D; a mira é o ponto do chão sob o ponteiro.
   const pointer = new THREE.Vector2();
-  let pointerDown = false;
   const canvasEl = renderer.domElement;
+  canvasEl.addEventListener("contextmenu", (e) => e.preventDefault());
   canvasEl.addEventListener("pointerdown", (e) => {
-    pointerDown = true;
     pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-    canvasEl.setPointerCapture(e.pointerId);
+    if (e.button === 0) combat.press("E");
+    else if (e.button === 2) combat.press("D");
   });
   canvasEl.addEventListener("pointermove", (e) => pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1));
-  canvasEl.addEventListener("pointerup", () => (pointerDown = false));
   const ray = new THREE.Raycaster();
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const hit = new THREE.Vector3();
@@ -138,35 +150,46 @@ async function main() {
 
   function frame() {
     clock.update();
-    const dt = Math.min(clock.getDelta(), 0.1);
+    const realDt = Math.min(clock.getDelta(), 0.1);
+    // Pausa curta no impacto: o mundo quase para por alguns centésimos de segundo.
+    const dt = combat.hitStop > 0 ? realDt * 0.08 : realDt;
+    if (combat.hitStop > 0) combat.hitStop = Math.max(0, combat.hitStop - realDt);
     const t = clock.getElapsed();
 
     // Direção pedida, convertida para o mundo pela rotação da câmera.
     const sx = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
     const sy = (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
     dir.set(0, 0);
-    if (sx || sy) {
+    if (!combat.alive) {
+      // Caído: não anda até voltar ao refúgio.
+    } else if (sx || sy) {
       const l = Math.hypot(sx, sy);
       const fx = sx / l;
       const fy = sy / l;
       dir.set(fx * Math.cos(yaw) + fy * Math.sin(yaw), -fx * Math.sin(yaw) + fy * Math.cos(yaw));
-    } else if (pointerDown) {
-      ray.setFromCamera(pointer, camera);
-      if (ray.ray.intersectPlane(groundPlane, hit)) {
-        dir.set(hit.x - player.position.x, hit.z - player.position.z);
-        const l = dir.length();
-        if (l < 0.6) dir.set(0, 0);
-        else dir.multiplyScalar(Math.min(1, l / 2) / l);
-      }
+    }
+    // Mira: onde o ponteiro toca o chão, no máximo a 12 m do jogador.
+    ray.setFromCamera(pointer, camera);
+    if (ray.ray.intersectPlane(groundPlane, hit)) {
+      tmp.subVectors(hit, player.position).setY(0);
+      if (tmp.length() > 12) tmp.setLength(12);
+      combat.aim.copy(player.position).add(tmp).setY(0);
     }
     player.update(dt, dir, keys.has("ShiftLeft") || keys.has("ShiftRight"), t);
     chunks.update(player.position.x, player.position.z);
+    combat.update(dt, camera);
 
     // Câmera: segue com atraso suave, inclinada e um pouco à frente de onde o jogador anda.
     yaw += (yawTarget - yaw) * Math.min(1, dt * 8);
     camTarget.lerp(tmp.set(player.position.x + dir.x * 1.5, 0.9, player.position.z + dir.y * 1.5), Math.min(1, dt * 4));
     const back = distance * Math.cos(PITCH);
     camera.position.set(camTarget.x + Math.sin(yaw) * back, camTarget.y + distance * Math.sin(PITCH), camTarget.z + Math.cos(yaw) * back);
+    if (combat.shake > 0) {
+      const a = combat.shake * combat.shake * 2.5;
+      camera.position.x += (Math.random() - 0.5) * a;
+      camera.position.y += (Math.random() - 0.5) * a;
+      camera.position.z += (Math.random() - 0.5) * a;
+    }
     camera.lookAt(camTarget);
     occlusion.uCam.value.copy(camera.position);
     occlusion.uPlayer.value.set(player.position.x, 1.0, player.position.z);
@@ -236,7 +259,7 @@ async function main() {
   loading.style.opacity = "0";
   setTimeout(() => loading.remove(), 700);
   // Exposto para testes automatizados e depuração no console.
-  Object.assign(window, { __world: { player, chunks, camera, renderer, setDistance: (d: number) => (distance = d) } });
+  Object.assign(window, { __world: { player, chunks, camera, renderer, combat, setDistance: (d: number) => (distance = d) } });
 }
 
 main().catch((err) => {

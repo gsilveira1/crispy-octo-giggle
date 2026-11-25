@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { BLOCKING_GROUND, decodeGround, Ground, type TileChunk, type TileManifest } from "@bigriver/shared";
 import { buildBuildings } from "./buildings";
-import { groundMaterial } from "./ground";
+import { groundMaterial, isRoad } from "./ground";
 import { buildProps, tileKey, type Lamp } from "./props";
 
 type Loaded = { key: string; ground: Uint8Array; group: THREE.Group; lamps: Lamp[]; blocked: Set<number> };
@@ -86,7 +86,18 @@ export class Chunks3D {
     const floor = new THREE.Mesh(this.plane, groundMaterial(ground, s, [ox, oy], this.manifest.streets));
     floor.position.set((ox + s / 2) * m, 0, (oy + s / 2) * m);
     floor.receiveShadow = true;
-    group.add(floor, buildBuildings(data.buildings, m));
+    const local = (c: number, r: number) => (c >= ox && r >= oy && c < ox + s && r < oy + s ? ground[(r - oy) * s + (c - ox)] : this.groundAt(c, r));
+    // Distância (m) até o asfalto mais próximo, procurando até 3 tiles em volta.
+    const roadDistance = (x: number, z: number) => {
+      const c0 = Math.floor(x / m);
+      const r0 = Math.floor(z / m);
+      let best = Infinity;
+      for (let dr = -3; dr <= 3; dr++)
+        for (let dc = -3; dc <= 3; dc++)
+          if (isRoad(local(c0 + dc, r0 + dr))) best = Math.min(best, Math.hypot((c0 + dc + 0.5) * m - x, (r0 + dr + 0.5) * m - z));
+      return best;
+    };
+    group.add(floor, buildBuildings(data.buildings, m, roadDistance));
     const props = buildProps(ground, s, ox, oy, m);
     group.add(props.group);
     this.scene.add(group);
