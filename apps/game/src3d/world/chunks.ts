@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { BLOCKING_GROUND, decodeGround, Ground, type TileChunk, type TileManifest } from "@bigriver/shared";
-import { buildBuildings } from "./buildings";
+import { buildBuildings, roofHeights } from "./buildings";
 import { groundMaterial, isRoad } from "./ground";
 import { buildProps, tileKey, type Lamp } from "./props";
 
@@ -20,7 +20,7 @@ export function fetchChunk(baseUrl: string, key: string): Promise<TileChunk> {
   return p;
 }
 
-type Loaded = { key: string; ground: Uint8Array; group: THREE.Group; lamps: Lamp[]; blocked: Set<number> };
+type Loaded = { key: string; ground: Uint8Array; group: THREE.Group; lamps: Lamp[]; blocked: Set<number>; heights: Map<number, number>; roofs: Map<number, number> };
 
 /** Carrega os chunks de 64×64 tiles num raio em volta do jogador e descarrega os que ficam longe. */
 export class Chunks3D {
@@ -28,6 +28,8 @@ export class Chunks3D {
   private pending = new Map<string, Promise<void>>();
   private plane: THREE.PlaneGeometry;
 
+  /** Altura das lajes por tile, de todos os chunks montados (um prédio pode passar da borda do chunk). */
+  private roofs = new Map<number, number>();
   /** Raio carregado em volta do ponto seguido; cresce quando a câmera se afasta. */
   radiusM = 110;
 
@@ -64,6 +66,27 @@ export class Chunks3D {
 
   /** Chunks já baixados esperando para virar malha (no máximo alguns por quadro, para não travar). */
   private ready = new Map<string, TileChunk>();
+
+  /**
+   * Altura do chão onde dá para pisar, em metros: 0 na rua, o topo de carros, caixas e barreiras,
+   * a laje dos prédios de telhado plano. Infinity onde não dá para ficar (parede, árvore, poste,
+   * água, fora do mapa, chunk não carregado).
+   */
+  heightAt = (x: number, z: number): number => {
+    const m = this.manifest.metersPerTile;
+    const c = Math.floor(x / m);
+    const r = Math.floor(z / m);
+    const g = this.groundAt(c, r);
+    if (g === undefined || BLOCKING_GROUND.includes(g)) return Infinity;
+    const s = this.manifest.chunkSize;
+    const ch = this.loaded.get(`${Math.floor(c / s)}_${Math.floor(r / s)}`);
+    if (!ch) return Infinity;
+    const k = tileKey(c, r);
+    const prop = ch.heights.get(k);
+    if (prop !== undefined) return prop;
+    if (g === Ground.lot) return this.roofs.get(k) ?? Infinity;
+    return 0;
+  };
 
   update(x: number, z: number, buildsPerFrame = 2) {
     const span = this.manifest.chunkSize * this.manifest.metersPerTile;
@@ -153,7 +176,9 @@ export class Chunks3D {
     const props = buildProps(ground, s, ox, oy, m);
     group.add(props.group);
     this.scene.add(group);
-    this.loaded.set(key, { key, ground, group, lamps: props.lamps, blocked: props.blocked });
+    const roofs = roofHeights(data.buildings, m, tileKey);
+    for (const [k, h] of roofs) this.roofs.set(k, Math.max(this.roofs.get(k) ?? 0, h));
+    this.loaded.set(key, { key, ground, group, lamps: props.lamps, blocked: props.blocked, heights: props.heights, roofs });
   }
 
   private unload(ch: Loaded) {
@@ -166,6 +191,7 @@ export class Chunks3D {
     floor.material.map?.dispose();
     floor.material.roughnessMap?.dispose();
     floor.material.dispose();
+    for (const k of ch.roofs.keys()) this.roofs.delete(k);
     this.loaded.delete(ch.key);
   }
 }

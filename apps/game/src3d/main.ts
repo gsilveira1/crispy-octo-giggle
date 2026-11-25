@@ -76,7 +76,7 @@ async function main() {
   const chunks = new Chunks3D(scene, manifest, `maps/${city}`);
   const [sc, sr] = manifest.spawn;
   await chunks.preload(sc * m, sr * m);
-  const player = new Player(sc * m, sr * m, chunks.isBlocked);
+  const player = new Player(sc * m, sr * m, chunks.heightAt);
   scene.add(player.root);
   player.attachTrail(scene);
   // Modelo 3D da classe (gerado na Meshy, packages/meshy). Até carregar, aparece o boneco procedural.
@@ -161,6 +161,9 @@ async function main() {
     if (bigMap.open) return;
     if (e.code === "Space") {
       e.preventDefault();
+      if (combat.alive) player.jump();
+    }
+    if (e.code === "KeyF") {
       // Esquiva na direção das teclas (ou para a frente).
       const ix = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
       const iy = (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
@@ -213,9 +216,12 @@ async function main() {
   const o = new THREE.Object3D();
   let streetTimer = 0;
 
+  /** Para testes: câmera lenta (`__world.debug.timeScale = 0.1`). */
+  const debug = { timeScale: 1 };
+
   function frame() {
     clock.update();
-    const realDt = Math.min(clock.getDelta(), 0.1);
+    const realDt = Math.min(clock.getDelta(), 0.1) * debug.timeScale;
     // Pausa curta no impacto: o mundo quase para por alguns centésimos de segundo.
     const dt = combat.hitStop > 0 ? realDt * 0.08 : realDt;
     if (combat.hitStop > 0) combat.hitStop = Math.max(0, combat.hitStop - realDt);
@@ -251,7 +257,7 @@ async function main() {
     // Câmera: segue com atraso suave, inclinada e um pouco à frente de onde o jogador anda.
     yaw += (yawTarget - yaw) * Math.min(1, dt * 8);
     // Bem afastada, a câmera desliza para o centro da cidade para enquadrar tudo.
-    tmp.set(player.position.x + dir.x * 1.5, 0.9, player.position.z + dir.y * 1.5).lerp(cityCenter, far);
+    tmp.set(player.position.x + dir.x * 1.5, 0.9 + player.position.y * 0.8, player.position.z + dir.y * 1.5).lerp(cityCenter, far);
     camTarget.lerp(tmp, Math.min(1, dt * (far > 0 ? 6 : 4)));
     camera.far = Math.max(400, distance * 3);
     camera.updateProjectionMatrix();
@@ -265,7 +271,7 @@ async function main() {
     }
     camera.lookAt(camTarget);
     occlusion.uCam.value.copy(camera.position);
-    occlusion.uPlayer.value.set(player.position.x, 1.0, player.position.z);
+    occlusion.uPlayer.value.set(player.position.x, player.position.y + 1.0, player.position.z);
 
     rim.position.set(player.position.x + Math.sin(yaw) * 2, 2.6, player.position.z + Math.cos(yaw) * 2);
     sky.update(Date.now(), realDt);
@@ -372,7 +378,7 @@ async function main() {
   loading.style.opacity = "0";
   setTimeout(() => loading.remove(), 700);
   // Exposto para testes automatizados e depuração no console.
-  Object.assign(window, { __world: { player, chunks, camera, renderer, combat, setDistance: (d: number) => (distance = d), sky, markers, bigMap } });
+  Object.assign(window, { __world: { player, chunks, camera, renderer, combat, setDistance: (d: number) => (distance = d), sky, markers, bigMap, debug } });
 }
 
 main().catch((err) => {

@@ -396,6 +396,49 @@ function obb(ring: [number, number][]) {
   return best;
 }
 
+/** Forma inferida de um prédio (o mesmo prédio dá sempre o mesmo resultado). */
+function buildingShape(b: TileBuilding, mpt: number) {
+  const ring = b.footprint.slice(0, -1).map(([x, z]) => [x * mpt, z * mpt] as [number, number]);
+  if (ring.length < 3) return undefined;
+  const seed = hash(Math.round(ring[0]![0] * 10), Math.round(ring[0]![1] * 10), 1);
+  const h2 = (k: number) => hash(Math.round(seed * 1e6), k, 77);
+  const area = polyArea(ring);
+  const box = obb(ring);
+  const rect = area / Math.max(1e-3, 4 * box.a * box.b);
+  const levels = Math.min(b.levels, 12);
+  const pitched = levels <= 2 && area < 260 && rect > 0.82 && box.b < 9 && h2(1) < 0.85;
+  const shed = !pitched && area > 600;
+  return { ring, h2, area, box, levels, pitched, shed };
+}
+
+/**
+ * Onde dá para pisar em cima dos prédios: lajes (telhado plano) na altura da laje; telhado de telha
+ * e de zinco não (Infinity, é parede). Devolve a altura por tile (chave de `key(c, r)`).
+ */
+export function roofHeights(list: TileBuilding[], mpt: number, key: (c: number, r: number) => number): Map<number, number> {
+  const out = new Map<number, number>();
+  for (const b of list) {
+    const shape = buildingShape(b, mpt);
+    if (!shape) continue;
+    const h = shape.pitched || shape.shed ? Infinity : shape.levels * LEVEL_M;
+    const xs = shape.ring.map((p) => p[0]);
+    const zs = shape.ring.map((p) => p[1]);
+    const c0 = Math.floor(Math.min(...xs) / mpt);
+    const c1 = Math.floor(Math.max(...xs) / mpt);
+    const r0 = Math.floor(Math.min(...zs) / mpt);
+    const r1 = Math.floor(Math.max(...zs) / mpt);
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) {
+        // Tile conta se o centro ou algum canto cai dentro do contorno.
+        const pts: [number, number][] = [[c + 0.5, r + 0.5], [c + 0.1, r + 0.1], [c + 0.9, r + 0.1], [c + 0.1, r + 0.9], [c + 0.9, r + 0.9]];
+        if (!pts.some(([x, z]) => inside(x * mpt, z * mpt, shape.ring))) continue;
+        const k = key(c, r);
+        out.set(k, Math.max(out.get(k) ?? 0, h));
+      }
+  }
+  return out;
+}
+
 export type Tanks = { x: number; y: number; z: number; s: number }[];
 
 /**
@@ -421,16 +464,9 @@ export function buildBuildings(list: TileBuilding[], mpt: number, roadDistance: 
   const UP = V(0, 1, 0);
 
   for (const b of list) {
-    const ring = b.footprint.slice(0, -1).map(([x, z]) => [x * mpt, z * mpt] as [number, number]);
-    if (ring.length < 3) continue;
-    const seed = hash(Math.round(ring[0]![0] * 10), Math.round(ring[0]![1] * 10), 1);
-    const h2 = (k: number) => hash(Math.round(seed * 1e6), k, 77);
-    const area = polyArea(ring);
-    const box = obb(ring);
-    const rect = area / Math.max(1e-3, 4 * box.a * box.b);
-    const levels = Math.min(b.levels, 12);
-    const pitched = levels <= 2 && area < 260 && rect > 0.82 && box.b < 9 && h2(1) < 0.85;
-    const shed = !pitched && area > 600;
+    const shape = buildingShape(b, mpt);
+    if (!shape) continue;
+    const { ring, h2, area, box, levels, pitched, shed } = shape;
     const facadeColor = col.set(FACADES[Math.floor(h2(2) * FACADES.length)]!).offsetHSL(0, 0, (h2(3) - 0.5) * 0.08).convertSRGBToLinear().clone();
 
     // Lados virados para a rua (até 5 m) recebem porta e, às vezes, comércio no térreo.
