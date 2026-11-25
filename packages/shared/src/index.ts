@@ -6,3 +6,5 @@ export * from "./story.js";
 export * from "./map.js";
 export * from "./tiles.js";
 export * from "./time.js";
+export * from "./characters.js";
+export * from "./scenario.js";

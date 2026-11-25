@@ -155,6 +155,21 @@ export class Combat {
     }
   }
 
+  /** Cria posta à mão (builder de cenário). */
+  addEnemy(e: Enemy) {
+    this.enemies.push(e);
+    this.group.add(e.root);
+  }
+
+  removeEnemy(e: Enemy) {
+    const i = this.enemies.indexOf(e);
+    if (i >= 0) this.enemies.splice(i, 1);
+    this.group.remove(e.root);
+    this.bars.get(e)?.remove();
+    this.bars.delete(e);
+    if (this.focus === e) this.focus = undefined;
+  }
+
   get alive() {
     return this.dead <= 0;
   }

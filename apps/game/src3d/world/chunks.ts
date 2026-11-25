@@ -30,6 +30,8 @@ export class Chunks3D {
 
   /** Raio carregado em volta do ponto seguido; cresce quando a câmera se afasta. */
   radiusM = 110;
+  /** Tiles bloqueados por objetos do builder de cenário (tileKey). */
+  readonly extraBlocked = new Set<number>();
 
   constructor(private scene: THREE.Scene, private manifest: TileManifest, private baseUrl: string) {
     const s = manifest.chunkSize * manifest.metersPerTile;
@@ -58,6 +60,7 @@ export class Chunks3D {
     const r = Math.floor(z / m);
     const g = this.groundAt(c, r);
     if (g === undefined || g === Ground.lot || BLOCKING_GROUND.includes(g)) return true;
+    if (this.extraBlocked.has(tileKey(c, r))) return true;
     const s = this.manifest.chunkSize;
     return !!this.loaded.get(`${Math.floor(c / s)}_${Math.floor(r / s)}`)?.blocked.has(tileKey(c, r));
   };

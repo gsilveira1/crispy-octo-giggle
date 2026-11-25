@@ -26,6 +26,16 @@ export function setLampGlow(k: number) {
   (kit.headMat as THREE.MeshStandardMaterial).emissiveIntensity = 3 * k;
   (kit.poolMat as THREE.MeshBasicMaterial).opacity = k;
 }
+/** Geometrias e materiais dos objetos de rua, para o builder de cenário usar os mesmos. */
+export function propKit() {
+  if (!kit) {
+    kit = makeKit();
+    setLampGlow(glow);
+  }
+  return kit;
+}
+/** Força atual das luminárias (0 de dia, 1 de noite). */
+export const lampGlow = () => glow;
 const wireMat = new THREE.LineBasicMaterial({ color: 0x07080a });
 
 function makeKit(): Kit {
