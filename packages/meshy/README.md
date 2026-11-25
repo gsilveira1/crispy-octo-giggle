@@ -43,4 +43,4 @@ Um personagem humanoide com uma variação custa ~35 créditos.
 
 ## No jogo
 
-`apps/game/src3d/world/skinned.ts` liga as juntas procedurais do `Player` aos ossos da Meshy (`Hips`, `Spine01`, `Spine`, `neck`, `LeftArm`…), então os golpes, a esquiva e a queda que já existem animam o modelo sem precisar de animações novas. Para trocar o personagem, mude o caminho do `.glb` em `apps/game/src3d/main.ts`.
+`apps/game/src3d/world/skinned.ts` liga as juntas procedurais do `Player` aos ossos da Meshy (`Hips`, `Spine01`, `Spine`, `neck`, `LeftArm`…), então os golpes, a esquiva e a queda que já existem animam o modelo sem precisar de animações novas. Para trocar o personagem, mude o id em `apps/game/src3d/main.ts`. As crias (`combat/enemies.ts`, campo `model` de cada tipo) andam com a animação da Meshy e erguem os braços no aviso de ataque; os sobreviventes (`world/npcs.ts`) ficam em roda no refúgio, respirando e virando a cabeça para o jogador. Builds que não servem `.glb` (a build de testes) usam `VITE_MODEL_EXT=.wasm` com os arquivos renomeados.

@@ -1,11 +1,17 @@
 import * as THREE from "three";
+import { bone, instantiate, materialsOf, rotateBoneInModelFrame, type ModelAsset } from "../world/models";
 
-export type EnemyKind = { name: string; hp: number; dmg: [number, number]; speed: number; scale: number; attackEvery: number };
+/** model: id do modelo 3D em public/models (ver world/models.ts). */
+export type EnemyKind = { name: string; hp: number; dmg: [number, number]; speed: number; scale: number; attackEvery: number; model: string };
 
 export const KINDS: Record<"cria" | "graúda", EnemyKind> = {
-  cria: { name: "Cria da Cerração", hp: 60, dmg: [4, 7], speed: 3.2, scale: 1, attackEvery: 1.4 },
-  graúda: { name: "Cria Graúda", hp: 140, dmg: [8, 13], speed: 2.6, scale: 1.45, attackEvery: 2 },
+  cria: { name: "Cria da Cerração", hp: 60, dmg: [4, 7], speed: 3.2, scale: 1, attackEvery: 1.4, model: "enemy-cria" },
+  graúda: { name: "Cria Graúda", hp: 140, dmg: [8, 13], speed: 2.6, scale: 1.45, attackEvery: 2, model: "enemy-cria-grauda" },
 };
+
+const ARM_UP = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -2.1);
+const ARM_STRIKE = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -1.3);
+const WINDUP_GLOW = new THREE.Color(0x7a3a08);
 
 const AGGRO_M = 9;
 const LEASH_M = 26;
@@ -44,6 +50,12 @@ export class Enemy {
   private wisps: THREE.Mesh[] = [];
   private mats: THREE.MeshStandardMaterial;
   pulled?: THREE.Vector3;
+  private model?: THREE.Object3D;
+  private modelMats: THREE.MeshStandardMaterial[] = [];
+  private mixer?: THREE.AnimationMixer;
+  private walk?: THREE.AnimationAction;
+  private arms: THREE.Object3D[] = [];
+  private lastPos = new THREE.Vector3();
 
   constructor(readonly kind: EnemyKind, x: number, z: number) {
     this.home = new THREE.Vector3(x, 0, z);
@@ -86,6 +98,49 @@ export class Enemy {
     this.root.userData.enemy = this;
     this.body.traverse((o) => (o.userData.enemy = this));
     this.sync();
+  }
+
+  /**
+   * Troca a sombra procedural pelo modelo 3D. O modelo já tem a altura certa, então desfaz a
+   * escala do tipo (que continua valendo para alcance e morte). Anda com a animação da Meshy;
+   * aviso de ataque e bote erguem os braços por cima dela.
+   */
+  useModel(asset: ModelAsset) {
+    const model = instantiate(asset);
+    model.scale.setScalar(1 / this.kind.scale);
+    for (const c of this.body.children) c.visible = false;
+    this.body.add(model);
+    model.traverse((o) => (o.userData.enemy = this));
+    this.model = model;
+    this.modelMats = materialsOf(model);
+    this.mixer = new THREE.AnimationMixer(model);
+    if (asset.walk) {
+      this.walk = this.mixer.clipAction(asset.walk);
+      this.walk.play();
+      this.walk.time = Math.random() * asset.walk.duration;
+    }
+    this.arms = ["LeftArm", "RightArm"].map((n) => bone(model, n)).filter((b): b is THREE.Object3D => !!b);
+    this.lastPos.copy(this.pos);
+  }
+
+  private animateModel(dt: number) {
+    if (!this.model || !this.mixer) return;
+    const v = this.lastPos.distanceTo(this.pos) / Math.max(dt, 1e-4);
+    this.lastPos.copy(this.pos);
+    // Passo acompanha a velocidade; parada, a cria fica balançando devagar.
+    if (this.walk) this.walk.timeScale = this.stunned > 0 ? 0.05 : Math.max(0.2, v / 1.6);
+    this.mixer.update(dt);
+    const raise = this.windup > 0 ? ARM_UP : this.lunge > 0 ? ARM_STRIKE : undefined;
+    if (raise && this.arms.length) {
+      this.model.updateMatrixWorld(true);
+      for (const a of this.arms) rotateBoneInModelFrame(this.model, a, raise);
+    }
+    for (const m of this.modelMats) {
+      if (this.hitFlash > 0) m.emissive.setRGB(1, 1, 1);
+      else if (this.windup > 0) m.emissive.copy(WINDUP_GLOW);
+      else m.emissive.setRGB(0, 0, 0);
+      m.emissiveIntensity = this.hitFlash > 0 ? 0.8 : 1;
+    }
   }
 
   get alive() {
@@ -218,6 +273,7 @@ export class Enemy {
     this.body.children.forEach((c) => {
       if (c.name === "arm") c.rotation.x = this.windup > 0 ? -2.4 : -0.3 - (this.lunge > 0 ? 1.4 : Math.sin(this.t * 5) * 0.2);
     });
+    this.animateModel(dt);
     this.sync();
     return this.state === "chase";
   }
