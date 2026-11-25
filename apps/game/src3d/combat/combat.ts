@@ -47,6 +47,11 @@ export class Combat {
   private ray = new THREE.Raycaster();
   /** Quando o jogador clica numa cria, ele anda até ela. */
   approach = false;
+  /** Pausa curta no impacto (s) e tremor da câmera (m), lidos pelo laço principal. */
+  hitStop = 0;
+  shake = 0;
+  private combo = 0;
+  private pending: { t: number; fn: () => void }[] = [];
 
   constructor(
     private scene: THREE.Scene,
@@ -138,6 +143,14 @@ export class Combat {
   update(dt: number, camera: THREE.Camera) {
     const p = this.player.position;
     this.autoCd -= dt;
+    this.shake = Math.max(0, this.shake - dt * 1.2);
+    this.pending = this.pending.filter((pn) => {
+      pn.t -= dt;
+      if (pn.t > 0) return true;
+      if (this.alive) pn.fn();
+      return false;
+    });
+    if (this.target && this.player.position.distanceTo(this.target.pos) > AUTO_RANGE + 1) this.combo = 0;
     this.cds = this.cds.map((c) => Math.max(0, c - dt));
     this.abalado = Math.max(0, this.abalado - dt);
     this.inCombat = Math.max(0, this.inCombat - dt);
@@ -165,9 +178,15 @@ export class Combat {
       this.player.face(this.target.pos);
       const d = this.target.pos.distanceTo(p);
       if (d <= AUTO_RANGE * this.target.kind.scale && this.autoCd <= 0) {
-        this.autoCd = AUTO_EVERY;
-        this.player.swing();
-        this.hit(this.target, 8 + Math.floor(Math.random() * 5));
+        // Sequência de 3 golpes: dois cortes e um golpe de cima que derruba mais.
+        const step = this.combo++ % 3;
+        this.autoCd = step === 2 ? AUTO_EVERY * 1.3 : AUTO_EVERY * 0.75;
+        this.player.play(step === 0 ? "slash1" : step === 1 ? "slash2" : "slash3");
+        const tgt = this.target;
+        this.later(step === 2 ? 0.2 : 0.13, () => {
+          this.hit(tgt, step === 2 ? 15 : 8 + Math.floor(Math.random() * 4), SPARK, step === 2 ? 5 : 2);
+          if (step === 2) tgt.stagger(0.35);
+        });
       }
       if (d <= AUTO_RANGE) this.approach = false;
     } else this.player.face(undefined);
@@ -184,14 +203,24 @@ export class Combat {
     this.updateHud(camera);
   }
 
-  private hit(e: Enemy, base: number, color = SPARK) {
-    const dmg = Math.round(base * (this.abalado > 0 ? 0.7 : 1));
+  /** Agenda o dano para o instante do impacto da animação. */
+  private later(t: number, fn: () => void) {
+    this.pending.push({ t, fn });
+  }
+
+  private hit(e: Enemy, base: number, color = SPARK, knock = 2.5) {
+    if (!e.alive) return;
+    const crit = Math.random() < 0.15;
+    const dmg = Math.round(base * (this.abalado > 0 ? 0.7 : 1) * (crit ? 1.6 : 1));
     const killed = e.damage(dmg);
+    e.knock(this.tmp.subVectors(e.pos, this.player.position), knock * (crit ? 1.5 : 1));
+    this.hitStop = Math.max(this.hitStop, killed || crit ? 0.09 : 0.05);
+    this.shake = Math.max(this.shake, killed ? 0.25 : crit ? 0.18 : 0.08);
     this.inCombat = 4;
     const at = e.center;
     this.fx.burst(at, 14, color, 6, 0.4, this.tmp.subVectors(at, this.player.position).setY(0.6).normalize(), 0.8);
     this.fx.burst(at, 6, SHADOW, 2, 0.9);
-    this.text.show(String(dmg), at.setY(at.y + 0.6), "dmg");
+    this.text.show(crit ? `${dmg}!` : String(dmg), at.setY(at.y + 0.6), crit ? "crit" : "dmg");
     if (killed) {
       this.fx.burst(e.center, 40, SHADOW, 4, 1.4);
       this.fx.burst(e.center, 16, new THREE.Color(1.4, 0.5, 0.2), 5, 0.7);
@@ -201,7 +230,13 @@ export class Combat {
 
   private hurt(dmg: number, from: Enemy) {
     if (!this.alive) return;
+    if (this.player.invulnerable) {
+      this.text.show("esquivou", this.player.position.clone().setY(2.3), "info", 0.7);
+      return;
+    }
     this.hp = Math.max(0, this.hp - dmg);
+    this.player.play("hurt");
+    this.shake = Math.max(this.shake, 0.15);
     this.inCombat = 4;
     if (!this.target) this.setTarget(from);
     this.fx.burst(this.player.position.clone().setY(1.2), 8, BLOOD, 3, 0.4);
@@ -210,6 +245,7 @@ export class Combat {
     setTimeout(() => (this.hud.hurt.style.opacity = "0"), 120);
     if (this.hp === 0) {
       this.dead = 3;
+      this.player.die();
       this.setTarget(undefined);
       this.hud.status.textContent = "Você caiu… voltando ao refúgio";
       this.hud.status.style.opacity = "1";
@@ -218,6 +254,7 @@ export class Combat {
 
   private respawn() {
     this.player.position.copy(this.refuge);
+    this.player.revive();
     this.hp = MAX_HP * 0.6;
     this.abalado = ABALADO_S;
     this.hud.status.textContent = "Abalado: dano reduzido por 20 s";
@@ -237,9 +274,12 @@ export class Combat {
     this.inCombat = 4;
     this.flashSlot(i);
     if (s.name === "Talho") {
-      this.player.swing();
-      this.hit(t!, 25);
-      this.fx.burst(t!.center, 20, new THREE.Color(1.8, 1.4, 0.8), 8, 0.35);
+      this.player.play("slash3");
+      this.later(0.2, () => {
+        this.hit(t!, 25, SPARK, 6);
+        t!.stagger(0.6);
+        this.fx.burst(t!.center, 20, new THREE.Color(1.8, 1.4, 0.8), 8, 0.35);
+      });
     } else if (s.name === "Investida") {
       // Avança em linha reta até ficar colado no alvo, levantando poeira.
       const dir = this.tmp.subVectors(t!.pos, p).setY(0);
@@ -254,15 +294,18 @@ export class Combat {
         p.x = nx;
         p.z = nz;
       }
-      this.player.swing();
-      t!.stunned = 1.5;
+      this.player.play("charge");
+      t!.stagger(1.5);
       this.hit(t!, 14);
       this.text.show("atordoada", t!.center.setY(2.4), "info");
     } else if (s.name === "Redemoinho") {
-      this.player.swing("spin");
+      this.player.play("spin");
       this.fx.burst(p.clone().setY(1), 40, new THREE.Color(1.2, 1.1, 1), 7, 0.35, new THREE.Vector3(0, 0.2, 0), 3);
-      for (const e of this.enemies) if (e.alive && e.pos.distanceTo(p) <= 3.5 * Math.max(1, e.kind.scale * 0.8)) this.hit(e, 18);
+      this.later(0.15, () => {
+        for (const e of this.enemies) if (e.alive && e.pos.distanceTo(p) <= 3.5 * Math.max(1, e.kind.scale * 0.8)) this.hit(e, 18, SPARK, 6);
+      });
     } else if (s.name === "Chimarrão") {
+      this.player.play("drink");
       this.hp = Math.min(MAX_HP, this.hp + 40);
       this.fx.burst(p.clone().setY(1.2), 24, HEAL, 2.5, 1, new THREE.Vector3(0, 1, 0), 0.5);
       this.text.show("+40", p.clone().setY(2.3), "heal");

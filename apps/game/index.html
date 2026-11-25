@@ -35,6 +35,7 @@
       .slot.used { animation: used 0.25s; }
       @keyframes used { 0% { border-color: #fff; transform: scale(0.92); } 100% { border-color: #6b5a3a; transform: scale(1); } }
       .float { position: fixed; transform: translate(-50%, -100%); font-weight: 800; font-size: 18px; color: #ffd27a; text-shadow: 0 0 4px #000, 0 2px 3px #000; pointer-events: none; white-space: nowrap; }
+      .float.crit { color: #ffef5a; font-size: 26px; }
       .float.hurt { color: #ff5a4a; font-size: 16px; }
       .float.heal { color: #7dff8a; }
       .float.info { color: #e8e4d8; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -49,7 +50,7 @@
     <div id="vignette"></div>
     <div id="labels"></div>
     <div id="where" class="hud"><b>Taquara</b><span></span></div>
-    <div id="help" class="hud">WASD: andar · Shift: correr · Tab ou clique na cria: alvo · 1–4: habilidades · Q/E: girar câmera · roda: zoom</div>
+    <div id="help" class="hud">WASD: andar · Shift: correr · Tab ou clique na cria: alvo · 1–4: habilidades · Espaço: esquiva · Q/E: girar câmera · roda: zoom</div>
     <div id="credit" class="hud"></div>
     <div id="loading">CARREGANDO A CERRAÇÃO…</div>
     <script type="module" src="/src3d/main.ts"></script>

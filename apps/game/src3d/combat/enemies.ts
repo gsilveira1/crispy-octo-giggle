@@ -13,7 +13,7 @@ const REACH_M = 1.5;
 const RESPAWN_S = 25;
 
 const shadowMat = new THREE.MeshStandardMaterial({ color: 0x0d0f14, roughness: 0.6, emissive: 0x1a2440, emissiveIntensity: 0.4, flatShading: true });
-const wispMat = new THREE.MeshBasicMaterial({ color: 0x8090b0, transparent: true, opacity: 0.18, depthWrite: false });
+const wispMat = new THREE.MeshBasicMaterial({ color: 0x8090b0, transparent: true, opacity: 0.1, depthWrite: false });
 const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff5a2a });
 
 /**
@@ -34,6 +34,11 @@ export class Enemy {
   private wanderT = 0;
   private attackCd = 0;
   private lunge = 0;
+  /** Aviso do ataque: a cria se prepara (olhos acendem, braços sobem) antes de bater. */
+  windup = 0;
+  private knockV = new THREE.Vector3();
+  private flinch = 0;
+  private eyes: THREE.MeshBasicMaterial;
   private deadT = 0;
   private t = Math.random() * 10;
   private wisps: THREE.Mesh[] = [];
@@ -51,8 +56,9 @@ export class Enemy {
     const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.26, 0), this.mats);
     head.position.set(0, 1.42, 0.22);
     const eyeG = new THREE.SphereGeometry(0.045, 6, 4);
+    this.eyes = eyeMat.clone();
     for (const s of [-1, 1]) {
-      const eye = new THREE.Mesh(eyeG, eyeMat);
+      const eye = new THREE.Mesh(eyeG, this.eyes);
       eye.position.set(0.09 * s, 1.46, 0.44);
       this.body.add(eye);
     }
@@ -95,6 +101,7 @@ export class Enemy {
     if (this.dead) return false;
     this.hp = Math.max(0, this.hp - n);
     this.hitFlash = 0.15;
+    this.flinch = 0.18;
     if (this.state === "idle") this.state = "chase";
     if (this.hp === 0) {
       this.dead = true;
@@ -102,6 +109,17 @@ export class Enemy {
       return true;
     }
     return false;
+  }
+
+  /** Empurrão (m/s) que se dissipa em ~0,25 s. */
+  knock(dir: THREE.Vector3, force: number) {
+    this.knockV.copy(dir).setY(0).normalize().multiplyScalar(force);
+  }
+
+  /** Interrompe o ataque que estava preparando. */
+  stagger(s: number) {
+    this.windup = 0;
+    this.stunned = Math.max(this.stunned, s);
   }
 
   /**
@@ -126,6 +144,12 @@ export class Enemy {
     }
     this.attackCd -= dt;
     this.stunned = Math.max(0, this.stunned - dt);
+    this.flinch = Math.max(0, this.flinch - dt);
+    if (this.knockV.lengthSq() > 0.01) {
+      this.tryMove(this.knockV.clone().normalize(), this.knockV.length() * dt, isBlocked);
+      this.knockV.multiplyScalar(Math.exp(-dt * 10));
+    }
+    this.eyes.color.setHex(this.windup > 0 ? 0xffe060 : 0xff5a2a);
     const toP = new THREE.Vector3().subVectors(player, this.pos).setY(0);
     const dP = toP.length();
     const fromHome = this.pos.distanceTo(this.home);
@@ -152,12 +176,21 @@ export class Enemy {
       speed *= 0.35;
     } else if (this.state === "chase") {
       if (!playerAlive || fromHome > LEASH_M) this.state = "return";
-      else if (dP > REACH_M * this.kind.scale) move.copy(toP);
+      else if (this.windup > 0) {
+        // Preparando: fica parado e, no fim, dá o bote em quem ainda estiver perto.
+        this.windup -= dt;
+        if (this.windup <= 0) {
+          this.windup = 0;
+          this.lunge = 0.3;
+          if (dP < REACH_M * this.kind.scale * 1.4) {
+            const [a, b] = this.kind.dmg;
+            onHit(Math.round(a + Math.random() * (b - a)));
+          }
+        }
+      } else if (dP > REACH_M * this.kind.scale) move.copy(toP);
       else if (this.attackCd <= 0 && this.stunned <= 0) {
         this.attackCd = this.kind.attackEvery;
-        this.lunge = 0.3;
-        const [a, b] = this.kind.dmg;
-        onHit(Math.round(a + Math.random() * (b - a)));
+        this.windup = 0.45 * (this.kind.scale > 1 ? 1.4 : 1);
       }
     } else {
       move.subVectors(this.home, this.pos).setY(0);
@@ -165,7 +198,7 @@ export class Enemy {
       this.hp = Math.min(this.kind.hp, this.hp + this.kind.hp * dt * 0.5);
       if (move.length() < 0.5) this.state = "idle";
     }
-    if (this.stunned > 0) move = new THREE.Vector3();
+    if (this.stunned > 0 || this.windup > 0) move = new THREE.Vector3();
     if (move.lengthSq() > 0) {
       this.tryMove(move.normalize(), speed * dt, isBlocked);
       const look = Math.atan2(move.x, move.z);
@@ -180,8 +213,10 @@ export class Enemy {
     this.body.position.y = Math.sin(this.t * 6) * 0.04;
     this.body.position.z = this.lunge > 0 ? Math.sin((this.lunge / 0.3) * Math.PI) * 0.5 : 0;
     this.body.rotation.z = this.stunned > 0 ? Math.sin(this.t * 14) * 0.2 : 0;
+    // Recua no aviso, encolhe quando apanha.
+    this.body.rotation.x = this.windup > 0 ? -0.35 : this.flinch > 0 ? -0.4 * (this.flinch / 0.18) : 0;
     this.body.children.forEach((c) => {
-      if (c.name === "arm") c.rotation.x = -0.3 - (this.lunge > 0 ? 1.4 : Math.sin(this.t * 5) * 0.2);
+      if (c.name === "arm") c.rotation.x = this.windup > 0 ? -2.4 : -0.3 - (this.lunge > 0 ? 1.4 : Math.sin(this.t * 5) * 0.2);
     });
     this.sync();
     return this.state === "chase";

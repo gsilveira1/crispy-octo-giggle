@@ -55,6 +55,7 @@ async function main() {
   await chunks.preload(sc * m, sr * m);
   const player = new Player(sc * m, sr * m, chunks.isBlocked);
   scene.add(player.root);
+  player.attachTrail(scene);
   const refuge = player.position.clone();
   const combat = new Combat(scene, player, refuge, chunks.isBlocked);
   combat.spawnPacks(refuge);
@@ -95,6 +96,13 @@ async function main() {
   let yaw = 0;
   let yawTarget = 0;
   addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      // Esquiva na direção das teclas (ou para a frente).
+      const ix = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
+      const iy = (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
+      if (combat.alive) player.dodge(new THREE.Vector2(ix * Math.cos(yaw) + iy * Math.sin(yaw), -ix * Math.sin(yaw) + iy * Math.cos(yaw)));
+    }
     if (e.code === "KeyQ") yawTarget -= Math.PI / 4;
     if (e.code === "KeyE") yawTarget += Math.PI / 4;
   });
@@ -145,7 +153,10 @@ async function main() {
 
   function frame() {
     clock.update();
-    const dt = Math.min(clock.getDelta(), 0.1);
+    const realDt = Math.min(clock.getDelta(), 0.1);
+    // Pausa curta no impacto: o mundo quase para por alguns centésimos de segundo.
+    const dt = combat.hitStop > 0 ? realDt * 0.08 : realDt;
+    if (combat.hitStop > 0) combat.hitStop = Math.max(0, combat.hitStop - realDt);
     const t = clock.getElapsed();
 
     // Direção pedida, convertida para o mundo pela rotação da câmera.
@@ -178,6 +189,12 @@ async function main() {
     camTarget.lerp(tmp.set(player.position.x + dir.x * 1.5, 0.9, player.position.z + dir.y * 1.5), Math.min(1, dt * 4));
     const back = distance * Math.cos(PITCH);
     camera.position.set(camTarget.x + Math.sin(yaw) * back, camTarget.y + distance * Math.sin(PITCH), camTarget.z + Math.cos(yaw) * back);
+    if (combat.shake > 0) {
+      const a = combat.shake * combat.shake * 2.5;
+      camera.position.x += (Math.random() - 0.5) * a;
+      camera.position.y += (Math.random() - 0.5) * a;
+      camera.position.z += (Math.random() - 0.5) * a;
+    }
     camera.lookAt(camTarget);
     occlusion.uCam.value.copy(camera.position);
     occlusion.uPlayer.value.set(player.position.x, 1.0, player.position.z);
