@@ -1,0 +1,23 @@
+{
+  "id": "class-feiticeiro-f",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/class-feiticeiro-f.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21455-d92c-7640-8a53-c40f2408ba5a",
+      "thumbnail": "class-feiticeiro-f.v1.png",
+      "rigging_task": "01a21457-f7de-703e-8121-73c804b4673d"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 140
+  },
+  "picked": 1
+}

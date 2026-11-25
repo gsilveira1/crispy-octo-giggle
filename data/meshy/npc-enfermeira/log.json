@@ -1,0 +1,23 @@
+{
+  "id": "npc-enfermeira",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-enfermeira.jpg",
+  "spec": {
+    "polycount": 6500,
+    "rig": "humanoid",
+    "height": 1.75
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21449-6745-707c-8077-4c4a317ec5d4",
+      "thumbnail": "npc-enfermeira.v1.png",
+      "rigging_task": "01a2144a-e763-7409-b3ba-4a8787a75099"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 675
+  },
+  "picked": 1
+}

@@ -6,3 +6,6 @@ dist
 data/raw
 data/cities/*/build
 apps/game/dist
+# Arquivos brutos da Meshy (grandes); o jogo usa as versões otimizadas em apps/game/public/models
+data/meshy/**/*.glb
+.env

@@ -1,0 +1,23 @@
+{
+  "id": "vulto-bento",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/vulto-bento.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144b-ecd1-75e8-a8ab-b28de7de4aaa",
+      "thumbnail": "vulto-bento.v1.png",
+      "rigging_task": "01a2144d-6789-74c7-9a45-92081e2ba700"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 535
+  },
+  "picked": 1
+}

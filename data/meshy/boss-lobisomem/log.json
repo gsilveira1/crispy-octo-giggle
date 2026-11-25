@@ -1,0 +1,23 @@
+{
+  "id": "boss-lobisomem",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/boss-lobisomem.jpg",
+  "spec": {
+    "polycount": 20000,
+    "rig": "humanoid",
+    "height": 2.6
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21449-86ee-7112-a4da-a90dc183335d",
+      "thumbnail": "boss-lobisomem.v1.png",
+      "rigging_task": "01a2144b-7e12-77e3-a001-f0278ef20149"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 640
+  },
+  "picked": 1
+}

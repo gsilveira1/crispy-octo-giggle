@@ -1,0 +1,23 @@
+{
+  "id": "lenda-negrinho",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/lenda-negrinho.jpg",
+  "spec": {
+    "polycount": 8000,
+    "rig": "humanoid",
+    "height": 1.35
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21454-0d1f-751d-ab5f-6b33dd9f881b",
+      "thumbnail": "lenda-negrinho.v1.png",
+      "rigging_task": "01a21455-86b7-74a1-8424-ca7dc0214836"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 145
+  },
+  "picked": 1
+}

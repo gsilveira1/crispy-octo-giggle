@@ -8,6 +8,9 @@ import { occlusion } from "./world/buildings";
 import { Chunks3D } from "./world/chunks";
 import { Combat } from "./combat/combat";
 import { Player } from "./world/player";
+import { loadModel } from "./world/models";
+import { Survivors } from "./world/npcs";
+import { KINDS } from "./combat/enemies";
 import { hash, radialTexture } from "./world/util";
 
 const city = new URLSearchParams(location.search).get("city") ?? "taquara";
@@ -56,9 +59,22 @@ async function main() {
   const player = new Player(sc * m, sr * m, chunks.isBlocked);
   scene.add(player.root);
   player.attachTrail(scene);
+  // Modelo 3D da classe (gerado na Meshy, packages/meshy). Até carregar, aparece o boneco procedural.
+  loadModel("class-cavaleiro", false)
+    .then((a) => player.useModel(a.scene))
+    .catch((e) => console.warn("modelo do personagem não carregou; usando o procedural", e));
   const refuge = player.position.clone();
   const combat = new Combat(scene, player, refuge, chunks.isBlocked);
   combat.spawnPacks(refuge);
+  // Crias com os modelos 3D (as que não carregarem continuam com a sombra procedural).
+  for (const kind of Object.values(KINDS)) {
+    loadModel(kind.model)
+      .then((a) => combat.enemies.filter((e) => e.kind === kind).forEach((e) => e.useModel(a)))
+      .catch((e) => console.warn(`modelo ${kind.model} não carregou`, e));
+  }
+  const survivors = new Survivors();
+  scene.add(survivors.group);
+  void survivors.spawn(refuge, chunks.isBlocked);
   // Luz de recorte fraca vinda da câmera, só para o personagem ler bem contra o fundo escuro.
   const rim = new THREE.PointLight(0xb8c8ff, 3, 6, 1.5);
   scene.add(rim);
@@ -178,6 +194,7 @@ async function main() {
     player.update(dt, dir, keys.has("ShiftLeft") || keys.has("ShiftRight"), t);
     chunks.update(player.position.x, player.position.z);
     combat.update(dt, camera);
+    survivors.update(dt, player.position);
 
     // Câmera: segue com atraso suave, inclinada e um pouco à frente de onde o jogador anda.
     yaw += (yawTarget - yaw) * Math.min(1, dt * 8);

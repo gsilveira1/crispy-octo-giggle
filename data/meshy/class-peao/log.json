@@ -1,0 +1,23 @@
+{
+  "id": "class-peao",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/class-peao.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21446-7271-7231-88d2-5327c16469b6",
+      "thumbnail": "class-peao.v1.png",
+      "rigging_task": "01a21447-f06a-74c2-ac27-b38d73faa9fc"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 810
+  },
+  "picked": 1
+}

@@ -1,0 +1,23 @@
+{
+  "id": "class-cavaleiro-f",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/class-cavaleiro-f.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21444-6267-720a-bb4e-3f52632a00c9",
+      "thumbnail": "class-cavaleiro-f.v1.png",
+      "rigging_task": "01a21445-de65-7686-9ea7-cadb2b62735e"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 915
+  },
+  "picked": 1
+}
