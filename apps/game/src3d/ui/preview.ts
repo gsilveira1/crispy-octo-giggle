@@ -37,8 +37,8 @@ export class CharacterPreview {
     );
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.88, 0.92, 64).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xf0b44a, transparent: true, opacity: 0.6 }));
     this.scene.add(disc, ring, this.holder);
-    this.camera.position.set(0, 1.25, 4.6);
-    this.camera.lookAt(0, 0.95, 0);
+    this.camera.position.set(0, 1.4, 5.6);
+    this.camera.lookAt(0, 0.9, 0);
     this.canvas.addEventListener("pointerdown", (e) => {
       this.drag = e.clientX;
       this.canvas.setPointerCapture(e.pointerId);
@@ -59,12 +59,7 @@ export class CharacterPreview {
       const asset = await loadModel(id, false);
       if (this.wanted !== id) return;
       const model = instantiate(asset);
-      // Normaliza a altura para 1,8 m e põe os pés no chão.
-      const box = new THREE.Box3().setFromObject(model);
-      const h = box.max.y - box.min.y || 1.8;
-      const s = 1.8 / h;
-      model.scale.multiplyScalar(s);
-      model.position.y -= box.min.y * s;
+      // Os modelos já vêm em metros com os pés na origem (o Player usa do mesmo jeito).
       const j: Record<string, THREE.Object3D> = {};
       for (const n of JOINTS) j[n] = new THREE.Object3D();
       const rig = new SkinnedRig(model, j);

@@ -5,7 +5,7 @@
  */
 
 export type ActionId =
-  | "up" | "down" | "left" | "right" | "run" | "dodge"
+  | "up" | "down" | "left" | "right" | "run" | "jump" | "dodge"
   | "skill1" | "skill2" | "skill3" | "skill4"
   | "camLeft" | "camRight" | "zoom"
   | "map" | "streets" | "builder"
@@ -20,7 +20,8 @@ export const ACTIONS: ActionInfo[] = [
   { id: "left", label: "Andar para a esquerda", group: "Movimento", code: "KeyA" },
   { id: "right", label: "Andar para a direita", group: "Movimento", code: "KeyD" },
   { id: "run", label: "Correr (segurar)", group: "Movimento", code: "ShiftLeft" },
-  { id: "dodge", label: "Esquiva", group: "Movimento", code: "Space" },
+  { id: "jump", label: "Pular", group: "Movimento", code: "Space" },
+  { id: "dodge", label: "Cambalhota (esquiva)", group: "Movimento", code: "KeyF" },
   { id: "skill1", label: "Habilidade 1", group: "Combate", code: "Digit1" },
   { id: "skill2", label: "Habilidade 2", group: "Combate", code: "Digit2" },
   { id: "skill3", label: "Habilidade 3", group: "Combate", code: "Digit3" },

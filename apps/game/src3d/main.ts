@@ -18,6 +18,7 @@ import { CityImage, Markers, streetAnchors, type MapState } from "./ui/citymap";
 import { BigMap, Minimap } from "./ui/minimap";
 import { MarkerBeacons, StreetLabels } from "./ui/worldlabels";
 import { PHASE_LABEL } from "@bigriver/shared";
+import { GameShell } from "./ui/shell";
 
 const city = new URLSearchParams(location.search).get("city") ?? "taquara";
 const FOG = 0x161d29;
@@ -79,10 +80,7 @@ async function main() {
   const player = new Player(sc * m, sr * m, chunks.heightAt);
   scene.add(player.root);
   player.attachTrail(scene);
-  // Modelo 3D da classe (gerado na Meshy, packages/meshy). Até carregar, aparece o boneco procedural.
-  loadModel("class-cavaleiro", false)
-    .then((a) => player.useModel(a.scene))
-    .catch((e) => console.warn("modelo do personagem não carregou; usando o procedural", e));
+  // O modelo 3D da classe é carregado pela casca (ui/shell.ts) quando o jogador escolhe o personagem.
   const refuge = player.position.clone();
   const combat = new Combat(scene, player, refuge, chunks.isBlocked);
   combat.spawnPacks(refuge);
@@ -128,6 +126,9 @@ async function main() {
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.45, 0.45, 0.9);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+
+  // Menu inicial, seleção de personagem, pausa, configurações e builder de cenário.
+  const shell = new GameShell({ city, manifest, scene, renderer, composer, bloom, camera, moon, mist, player, combat, survivors, chunks, refuge, sky, bigMap, streetLabels });
 
   addEventListener("resize", () => {
     camera.aspect = innerWidth / innerHeight;
@@ -246,15 +247,17 @@ async function main() {
       if (tmp.length() > 12) tmp.setLength(12);
       combat.aim.copy(player.position).add(tmp).setY(0);
     }
-    player.update(dt, dir, keys.has("ShiftLeft") || keys.has("ShiftRight"), t);
+    player.update(shell.playerActive ? dt : 0, dir, keys.has("ShiftLeft") || keys.has("ShiftRight"), t);
     // Quanto mais longe a câmera, maior o raio carregado e mais chunks montados por quadro.
     const far = THREE.MathUtils.smoothstep(distance, 120, 900);
     chunks.radiusM = Math.max(110, distance * 1.15);
     chunks.update(camTarget.x, camTarget.z, distance > 120 ? 3 : 2);
-    combat.update(dt, camera);
+    combat.update(shell.combatActive ? dt : 0, camera);
+    shell.update(t);
     survivors.update(dt, player.position);
 
     // Câmera: segue com atraso suave, inclinada e um pouco à frente de onde o jogador anda.
+    if (shell.orbit) yawTarget += realDt * 0.05;
     yaw += (yawTarget - yaw) * Math.min(1, dt * 8);
     // Bem afastada, a câmera desliza para o centro da cidade para enquadrar tudo.
     tmp.set(player.position.x + dir.x * 1.5, 0.9 + player.position.y * 0.8, player.position.z + dir.y * 1.5).lerp(cityCenter, far);
@@ -264,7 +267,7 @@ async function main() {
     const back = distance * Math.cos(PITCH);
     camera.position.set(camTarget.x + Math.sin(yaw) * back, camTarget.y + distance * Math.sin(PITCH), camTarget.z + Math.cos(yaw) * back);
     if (combat.shake > 0) {
-      const a = combat.shake * combat.shake * 2.5;
+      const a = combat.shake * combat.shake * 2.5 * shell.shake;
       camera.position.x += (Math.random() - 0.5) * a;
       camera.position.y += (Math.random() - 0.5) * a;
       camera.position.z += (Math.random() - 0.5) * a;
@@ -378,7 +381,7 @@ async function main() {
   loading.style.opacity = "0";
   setTimeout(() => loading.remove(), 700);
   // Exposto para testes automatizados e depuração no console.
-  Object.assign(window, { __world: { player, chunks, camera, renderer, combat, setDistance: (d: number) => (distance = d), sky, markers, bigMap, debug } });
+  Object.assign(window, { __world: { player, chunks, camera, renderer, combat, setDistance: (d: number) => (distance = d), sky, markers, bigMap, debug, shell } });
 }
 
 main().catch((err) => {

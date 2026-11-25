@@ -8,19 +8,20 @@ import type { Combat } from "../combat/combat";
 import { SURVIVORS as SURVIVOR_MODELS, type Survivors } from "../world/npcs";
 import "./builder.css";
 
-type Palette = { kind: ScenarioItemKind; name: string; icon: string; solid: boolean; hint: string };
+/** solid: altura de pisar em cima (m); Infinity = bloqueia e não dá para subir; undefined = não bloqueia. */
+type Palette = { kind: ScenarioItemKind; name: string; icon: string; solid?: number; hint: string };
 
 export const PALETTE: Palette[] = [
-  { kind: "crate", name: "Caixa", icon: "▣", solid: true, hint: "Caixote de madeira" },
-  { kind: "barrel", name: "Barril", icon: "◍", solid: true, hint: "Tambor de óleo" },
-  { kind: "barrier", name: "Barreira", icon: "▭", solid: true, hint: "Barreira de concreto listrada" },
-  { kind: "car", name: "Carro", icon: "🚗", solid: true, hint: "Carro abandonado" },
-  { kind: "tree", name: "Árvore", icon: "🌳", solid: true, hint: "Árvore" },
-  { kind: "lamp", name: "Poste", icon: "💡", solid: true, hint: "Poste com luz de verdade" },
-  { kind: "fire", name: "Fogo", icon: "🔥", solid: true, hint: "Tambor com fogo (luz que tremula)" },
-  { kind: "pack", name: "Bando", icon: "☠", solid: false, hint: "Bando de crias da Cerração" },
-  { kind: "survivor", name: "Sobrevivente", icon: "☺", solid: false, hint: "NPC sobrevivente parado" },
-  { kind: "refuge", name: "Refúgio", icon: "⛺", solid: false, hint: "Onde o jogador volta ao cair (um só)" },
+  { kind: "crate", name: "Caixa", icon: "▣", solid: 0.9, hint: "Caixote de madeira" },
+  { kind: "barrel", name: "Barril", icon: "◍", solid: 0.95, hint: "Tambor de óleo" },
+  { kind: "barrier", name: "Barreira", icon: "▭", solid: 0.85, hint: "Barreira de concreto listrada" },
+  { kind: "car", name: "Carro", icon: "🚗", solid: 1.62, hint: "Carro abandonado" },
+  { kind: "tree", name: "Árvore", icon: "🌳", solid: Infinity, hint: "Árvore" },
+  { kind: "lamp", name: "Poste", icon: "💡", solid: Infinity, hint: "Poste com luz de verdade" },
+  { kind: "fire", name: "Fogo", icon: "🔥", solid: Infinity, hint: "Tambor com fogo (luz que tremula)" },
+  { kind: "pack", name: "Bando", icon: "☠", hint: "Bando de crias da Cerração" },
+  { kind: "survivor", name: "Sobrevivente", icon: "☺", hint: "NPC sobrevivente parado" },
+  { kind: "refuge", name: "Refúgio", icon: "⛺", hint: "Onde o jogador volta ao cair (um só)" },
 ];
 
 const CAR_COLORS = ["#6d1f1f", "#2c3e57", "#6b6b66", "#c9c4b8", "#1f3b2a", "#7a5a25"];
@@ -38,7 +39,7 @@ export type BuilderDeps = {
   survivors: Survivors;
   /** Refúgio atual (o vetor é o mesmo que o combate usa para o renascimento). */
   refuge: THREE.Vector3;
-  extraBlocked: Set<number>;
+  extraHeights: Map<number, number>;
   isBlocked: (x: number, z: number) => boolean;
 };
 
@@ -311,10 +312,11 @@ export class ScenarioBuilder {
     this.markers.add(ring);
     obj.userData.ring = ring;
     // Objetos sólidos bloqueiam o tile onde estão.
-    if (PALETTE.find((q) => q.kind === item.kind)!.solid) {
+    const solid = PALETTE.find((q) => q.kind === item.kind)!.solid;
+    if (solid !== undefined) {
       const m = this.d.metersPerTile;
       const key = tileKey(Math.floor(item.x / m), Math.floor(item.z / m));
-      this.d.extraBlocked.add(key);
+      this.d.extraHeights.set(key, Math.max(this.d.extraHeights.get(key) ?? 0, solid));
       p.tiles.push(key);
     }
     this.group.add(obj);
@@ -332,7 +334,11 @@ export class ScenarioBuilder {
     if (p.npc) this.d.survivors.remove(p.npc);
     this.lamps = this.lamps.filter((l) => !p.lights.includes(l));
     this.flicker = this.flicker.filter((f) => !p.lights.includes(f.light));
-    for (const k of p.tiles) if (![...this.placed.values()].some((o) => o !== p && o.tiles.includes(k))) this.d.extraBlocked.delete(k);
+    for (const k of p.tiles) {
+      const others = [...this.placed.values()].filter((o) => o !== p && o.tiles.includes(k));
+      if (others.length) this.d.extraHeights.set(k, Math.max(...others.map((o) => PALETTE.find((q) => q.kind === o.item.kind)!.solid ?? 0)));
+      else this.d.extraHeights.delete(k);
+    }
     if (p.item.kind === "refuge") this.d.refuge.copy(this.originalRefuge);
     this.placed.delete(id);
     if (this.hover === id) this.hover = undefined;

@@ -87,7 +87,7 @@ export class GameShell {
       combat: d.combat,
       survivors: d.survivors,
       refuge: d.refuge,
-      extraBlocked: d.chunks.extraBlocked,
+      extraHeights: d.chunks.extraHeights,
       isBlocked: d.chunks.isBlocked,
     });
     this.builder.onClose = () => {
@@ -327,7 +327,7 @@ export class GameShell {
     if (!help) return;
     const k = (a: ActionId) => `<b>${keyName(this.settings.values.keys[a])}</b>`;
     help.innerHTML =
-      `${k("up")}${k("left")}${k("down")}${k("right")}: andar · ${k("run")}: correr · mouse: golpes e combos · ${k("skill1")}–${k("skill4")}: habilidades · ${k("dodge")}: esquiva · ${k("camLeft")}/${k("camRight")}: girar câmera · roda/${k("zoom")}: zoom` +
+      `${k("up")}${k("left")}${k("down")}${k("right")}: andar · ${k("run")}: correr · mouse: golpes e combos · ${k("skill1")}–${k("skill4")}: habilidades · ${k("jump")}: pular · ${k("dodge")}: cambalhota · ${k("camLeft")}/${k("camRight")}: girar câmera · roda/${k("zoom")}: zoom` +
       `<br>${k("map")}: mapa da cidade · ${k("streets")}: nomes das ruas · ${k("builder")}: builder de cenário · <b>Esc</b>: pausa e configurações`;
   }
 
@@ -525,8 +525,6 @@ export class GameShell {
         if (out) out.textContent = k === "fov" ? `${v}°` : `${Math.round((v as number) * 100)}%`;
       });
     });
-    // Mudanças por teclado no jogo (N, Q/E) não passam por aqui; a tela relê ao abrir.
-    this.settings.onChange(() => undefined);
   }
 
   private bind(el: HTMLElement, actions: Record<string, () => void>) {
