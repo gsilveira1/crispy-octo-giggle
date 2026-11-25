@@ -211,9 +211,9 @@ As imagens de frente em pose A estão em [`conceitos/<id>.jpg`](conceitos/), uma
 Cuidados antes de gerar o 3D:
 
 - **`class-tropeiro`** está mais fotográfico que o resto (rosto e tecido realistas, fundo diferente). Vale gerar de novo com o estilo comum para não destoar da `class-tropeiro-f`.
-- **Crias:** os olhos e a fumaça são feitos no jogo. Se o Image to 3D tentar modelar a fumaça em volta da `enemy-cria-grauda` e da `enemy-cria-rasteira`, apague a fumaça da imagem antes (ou use Text to 3D com o prompt).
+- **Crias:** os olhos e a fumaça são feitos no jogo. Se o Image to 3D tentar modelar a fumaça em volta da `enemy-cria-grauda` e da `enemy-cria-rasteira`, apague a fumaça da imagem antes (ou use Text to 3D com o prompt). **Decidido (2026-11-25):** a graúda e a rasteira saíram com a fumaça modelada e ficam assim por enquanto.
 - **`lenda-negrinho-baio`** e **`enemy-cria-rasteira`** são quadrúpedes: esqueleto pelo *Smart Rig*, não Mixamo.
-- **Lobisomem:** a camisa xadrez e o lenço batem com o **`npc-agricultor`**. Se ele for o sobrevivente que vira lobisomem, use a mesma textura de camisa e lenço nos dois modelos (o lenço do agricultor é vermelho liso; o do lobisomem, vermelho e branco desbotado: escolher um).
+- **Lobisomem:** **decidido (2026-11-25): o `npc-agricultor` (colono) é o sobrevivente que vira lobisomem.** A camisa xadrez e o lenço precisam bater nos dois modelos: hoje o lenço do agricultor é vermelho liso e o do lobisomem vermelho e branco desbotado. Falta igualar a textura (Blender) antes do lançamento.
 - Armas e objetos (facão, lança, cuia, laço, lampião) saem num objeto separado no Blender, como diz o passo 5.
 - Ao subir no Meshy, plano pago e privado, nunca na comunidade.
 
