@@ -1,0 +1,23 @@
+{
+  "id": "vulto-garibaldi",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/vulto-garibaldi.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144f-c46b-7175-a772-6b80a0c3fa06",
+      "thumbnail": "vulto-garibaldi.v1.png",
+      "rigging_task": "01a21451-b897-70eb-9cc7-de2d6acc8c64"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 325
+  },
+  "picked": 1
+}

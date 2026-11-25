@@ -1,0 +1,23 @@
+{
+  "id": "class-tropeiro",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/class-tropeiro.jpg",
+  "spec": {
+    "polycount": 12000,
+    "rig": "humanoid",
+    "height": 1.78
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144e-cb4b-737b-b1e1-7bad0c593889",
+      "thumbnail": "class-tropeiro.v1.png",
+      "rigging_task": "01a21450-6e9d-7255-b411-6ee0038f9200"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 395
+  },
+  "picked": 1
+}

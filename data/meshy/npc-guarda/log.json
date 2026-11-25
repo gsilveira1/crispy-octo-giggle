@@ -1,0 +1,23 @@
+{
+  "id": "npc-guarda",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-guarda.jpg",
+  "spec": {
+    "polycount": 6500,
+    "rig": "humanoid",
+    "height": 1.75
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144f-2ff8-728f-853c-deb7baa3e61d",
+      "thumbnail": "npc-guarda.v1.png",
+      "rigging_task": "01a21450-ffa5-70dc-af18-461f63f0d36f"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 360
+  },
+  "picked": 1
+}

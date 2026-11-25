@@ -1,0 +1,23 @@
+{
+  "id": "npc-estudante",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-estudante.jpg",
+  "spec": {
+    "polycount": 6500,
+    "rig": "humanoid",
+    "height": 1.75
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a2144d-12af-7006-b1c5-9e0d06b8f8d3",
+      "thumbnail": "npc-estudante.v1.png",
+      "rigging_task": "01a2144e-b97e-759a-b4a0-99403722f8ca"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 465
+  },
+  "picked": 1
+}

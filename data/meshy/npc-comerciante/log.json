@@ -1,0 +1,23 @@
+{
+  "id": "npc-comerciante",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/npc-comerciante.jpg",
+  "spec": {
+    "polycount": 6500,
+    "rig": "humanoid",
+    "height": 1.75
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21445-b77f-72f0-8bc7-ff2bcea38e5e",
+      "thumbnail": "npc-comerciante.v1.png",
+      "rigging_task": "01a21447-33c5-7018-8baa-1533416e065b"
+    }
+  ],
+  "credits": {
+    "spent": 35,
+    "balance_after": 880
+  },
+  "picked": 1
+}

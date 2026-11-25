@@ -1,0 +1,22 @@
+{
+  "id": "enemy-cria-rasteira",
+  "date": "2026-11-25",
+  "input": "docs/assets/conceitos/enemy-cria-rasteira.jpg",
+  "spec": {
+    "polycount": 6000,
+    "rig": null,
+    "height": 1
+  },
+  "variants": [
+    {
+      "n": 1,
+      "image_to_3d_task": "01a21448-3131-758e-8e2b-dd60c69a900c",
+      "thumbnail": "enemy-cria-rasteira.v1.png"
+    }
+  ],
+  "credits": {
+    "spent": 30,
+    "balance_after": 745
+  },
+  "picked": 1
+}
