@@ -6,7 +6,7 @@ MMORPG de browser com mapas reais das cidades do Rio Grande do Sul, começando p
 
 ```
 apps/
-  game/     cliente do jogo (Phaser 4, roda com pnpm --filter @bigriver/game dev)
+  game/     cliente do jogo (Three.js 3D, roda com pnpm --filter @bigriver/game dev)
   admin/    painel para criar e configurar cidades, NPCs, regras e história
   server/   servidor multiplayer
 packages/
