@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { SkinnedRig } from "./skinned";
 
 /** Metros por segundo andando (GameRules.playerSpeedMetersPerSecond). */
 const WALK_MPS = 4;
@@ -50,6 +51,9 @@ export class Player {
   private faceTarget?: THREE.Vector3;
   private t = 0;
   moving = false;
+  private rig?: SkinnedRig;
+  private itemsR: THREE.Object3D[] = [];
+  private itemsL: THREE.Object3D[] = [];
 
   constructor(x: number, z: number, private isBlocked: (x: number, z: number) => boolean) {
     this.position.set(x, 0, z);
@@ -139,18 +143,21 @@ export class Player {
     this.bladeBase.position.set(0, 0, 0.15);
     this.bladeTip.position.set(0, 0, 0.78);
     this.j.handR!.add(blade, hilt, this.bladeBase, this.bladeTip);
+    this.itemsR.push(blade, hilt, this.bladeBase, this.bladeTip);
     // Lampião pendurado na mão esquerda; cuia de chimarrão escondida até beber.
     const lamp = new THREE.Group();
     lamp.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.17, 0.12), new THREE.MeshStandardMaterial({ color: 0x2a1d10, emissive: 0xffa040, emissiveIntensity: 4 })));
     lamp.add(new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 4, 8), mat(0x222222)).translateY(0.12));
     lamp.position.set(0, -0.14, 0);
     this.j.handL!.add(lamp);
+    this.itemsL.push(lamp);
     this.cuia = new THREE.Group();
     this.cuia.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6).scale(1, 1.2, 1), mat(0x5b3a1e)));
     this.cuia.add(new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.14, 4).translate(0.02, 0.1, 0), new THREE.MeshStandardMaterial({ color: 0xcfc6a0, metalness: 0.9, roughness: 0.3 })));
     this.cuia.visible = false;
     this.j.handR!.add(this.cuia);
     this.cuia.position.set(0, 0.02, 0.06);
+    this.itemsR.push(this.cuia);
 
     this.body.traverse((o) => {
       if (o instanceof THREE.Mesh) o.castShadow = true;
@@ -178,6 +185,25 @@ export class Player {
     );
     this.trail.frustumCulled = false;
     this.sync();
+  }
+
+  /**
+   * Troca o boneco procedural por um modelo com esqueleto (glTF da Meshy, ver packages/meshy).
+   * As juntas procedurais continuam animando; o SkinnedRig copia a pose para os ossos.
+   * Facão, cuia e lampião passam para as mãos do modelo.
+   */
+  useModel(model: THREE.Object3D) {
+    const rig = new SkinnedRig(model, this.j);
+    if (!rig.handR || !rig.handL) return;
+    const keep = new Set<THREE.Object3D>();
+    for (const o of [...this.itemsR, ...this.itemsL]) o.traverse((c) => keep.add(c));
+    this.body.traverse((o) => {
+      if (o instanceof THREE.Mesh && !keep.has(o)) o.visible = false;
+    });
+    for (const o of this.itemsR) rig.handR.add(o);
+    for (const o of this.itemsL) rig.handL.add(o);
+    this.body.add(model);
+    this.rig = rig;
   }
 
   /** Adiciona o rastro na cena (fica em coordenadas do mundo). */
@@ -456,6 +482,7 @@ export class Player {
     this.poncho.scale.set(flare, 1, flare);
     this.poncho.rotation.x += (-local.y * 0.04 - this.j.spine!.rotation.x * 0.5 - this.poncho.rotation.x) * damp(dt, 8);
     this.poncho.rotation.z += (local.x * 0.04 - this.poncho.rotation.z) * damp(dt, 8);
+    this.rig?.apply();
   }
 
   private updateTrail() {

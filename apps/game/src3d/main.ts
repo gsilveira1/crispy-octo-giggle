@@ -3,6 +3,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { TileManifest } from "@bigriver/shared";
 import { occlusion } from "./world/buildings";
 import { Chunks3D } from "./world/chunks";
@@ -56,6 +57,11 @@ async function main() {
   const player = new Player(sc * m, sr * m, chunks.isBlocked);
   scene.add(player.root);
   player.attachTrail(scene);
+  // Modelo 3D da classe (gerado na Meshy, packages/meshy). Até carregar, aparece o boneco procedural.
+  new GLTFLoader()
+    .loadAsync("models/class-cavaleiro.glb")
+    .then((g) => player.useModel(g.scene))
+    .catch((e) => console.warn("modelo do personagem não carregou; usando o procedural", e));
   const refuge = player.position.clone();
   const combat = new Combat(scene, player, refuge, chunks.isBlocked);
   combat.spawnPacks(refuge);

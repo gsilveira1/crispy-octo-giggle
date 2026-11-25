@@ -1,0 +1,13 @@
+{
+  "name": "@bigriver/meshy",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gera os modelos 3D dos personagens na Meshy (Image to 3D, remesh, rigging) a partir dos conceitos em docs/assets/conceitos.",
+  "scripts": {
+    "meshy": "node --env-file-if-exists=../../.env src/meshy.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.2.0"
+  }
+}

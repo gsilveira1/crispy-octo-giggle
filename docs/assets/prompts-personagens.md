@@ -225,4 +225,4 @@ Uma linha por modelo que entrar no jogo (pedido da issue #24, para provar autori
 
 | id | ferramenta e plano | data | entrada (prompt/imagem) | variação escolhida | retoque (quem, o quê) | recibo |
 | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | |
+| `class-cavaleiro` | Meshy API (plano pago, privado), Image to 3D + remesh + rigging | 2026-11-25 | `docs/assets/conceitos/class-cavaleiro.jpg` | 1 de 1 | texturas 1024 px WebP (script) | tarefas 01a2143b-e427-73ec-a825-e6c7c3cfb9bc, 01a21440-9964-71d1-8d69-7966cde7671b; ~35 créditos |
