@@ -6,6 +6,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import type { TileManifest } from "@bigriver/shared";
 import { occlusion } from "./world/buildings";
 import { Chunks3D } from "./world/chunks";
+import { Combat } from "./combat/combat";
 import { Player } from "./world/player";
 import { hash, radialTexture } from "./world/util";
 
@@ -54,6 +55,9 @@ async function main() {
   await chunks.preload(sc * m, sr * m);
   const player = new Player(sc * m, sr * m, chunks.isBlocked);
   scene.add(player.root);
+  const refuge = player.position.clone();
+  const combat = new Combat(scene, player, refuge, chunks.isBlocked);
+  combat.spawnPacks(refuge);
   // Luz de recorte fraca vinda da câmera, só para o personagem ler bem contra o fundo escuro.
   const rim = new THREE.PointLight(0xb8c8ff, 3, 6, 1.5);
   scene.add(rim);
@@ -102,8 +106,11 @@ async function main() {
   let pointerDown = false;
   const canvasEl = renderer.domElement;
   canvasEl.addEventListener("pointerdown", (e) => {
-    pointerDown = true;
     pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    // Clique numa cria escolhe o alvo; clique no chão anda.
+    if (combat.click(pointer, camera)) return;
+    combat.approach = false;
+    pointerDown = true;
     canvasEl.setPointerCapture(e.pointerId);
   });
   canvasEl.addEventListener("pointermove", (e) => pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1));
@@ -145,7 +152,10 @@ async function main() {
     const sx = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0);
     const sy = (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0);
     dir.set(0, 0);
-    if (sx || sy) {
+    if (!combat.alive) {
+      // Caído: não anda até voltar ao refúgio.
+    } else if (sx || sy) {
+      combat.approach = false;
       const l = Math.hypot(sx, sy);
       const fx = sx / l;
       const fy = sy / l;
@@ -158,9 +168,10 @@ async function main() {
         if (l < 0.6) dir.set(0, 0);
         else dir.multiplyScalar(Math.min(1, l / 2) / l);
       }
-    }
+    } else combat.approachDir(dir);
     player.update(dt, dir, keys.has("ShiftLeft") || keys.has("ShiftRight"), t);
     chunks.update(player.position.x, player.position.z);
+    combat.update(dt, camera);
 
     // Câmera: segue com atraso suave, inclinada e um pouco à frente de onde o jogador anda.
     yaw += (yawTarget - yaw) * Math.min(1, dt * 8);
@@ -236,7 +247,7 @@ async function main() {
   loading.style.opacity = "0";
   setTimeout(() => loading.remove(), 700);
   // Exposto para testes automatizados e depuração no console.
-  Object.assign(window, { __world: { player, chunks, camera, renderer, setDistance: (d: number) => (distance = d) } });
+  Object.assign(window, { __world: { player, chunks, camera, renderer, combat, setDistance: (d: number) => (distance = d) } });
 }
 
 main().catch((err) => {

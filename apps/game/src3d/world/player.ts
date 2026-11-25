@@ -20,6 +20,9 @@ export class Player {
   private lantern: THREE.PointLight;
   private heading = 0;
   private walk = 0;
+  private swingT = 0;
+  private swingKind: "slash" | "spin" = "slash";
+  private faceTarget?: THREE.Vector3;
   moving = false;
 
   constructor(x: number, z: number, private isBlocked: (x: number, z: number) => boolean) {
@@ -56,10 +59,19 @@ export class Player {
     this.armR = new THREE.Group();
     this.armR.position.set(0.32, 1.42, 0);
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.55, 0.12).translate(0, -0.27, 0), mat(0x3a2f26));
+    // Facão na mão direita.
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.75).translate(0, 0, 0.42), new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: 0.9, roughness: 0.25 }));
+    const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.16), mat(0x2a1a10));
+    const weapon = new THREE.Group();
+    weapon.add(blade, hilt);
+    weapon.position.set(0, -0.6, 0.05);
+    this.armR.add(arm, weapon);
+    // Lampião na mão esquerda.
+    const armL = new THREE.Group();
+    armL.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.55, 0.12).translate(0, -0.27, 0), mat(0x3a2f26)));
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.14), new THREE.MeshStandardMaterial({ color: 0x332211, emissive: 0xffa040, emissiveIntensity: 5 }));
-    lamp.position.set(0.02, -0.66, 0.06);
-    this.armR.add(arm, lamp);
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.55, 0.12).translate(0, -0.27, 0), mat(0x3a2f26));
+    lamp.position.set(-0.02, -0.66, 0.06);
+    armL.add(lamp);
     armL.position.set(-0.32, 1.42, 0);
     armL.rotation.z = -0.15;
     this.body.add(this.legL, this.legR, torso, poncho, band, head, lenco, brim, crown, this.armR, armL);
@@ -68,7 +80,7 @@ export class Player {
     });
     // Luz do lampião: pequena e quente, para o personagem nunca ficar no escuro.
     this.lantern = new THREE.PointLight(0xffa552, 6, 9, 1.6);
-    this.lantern.position.set(0.4, 0.9, 0.3);
+    this.lantern.position.set(-0.4, 0.9, 0.3);
     this.root.add(this.body, this.lantern);
     this.sync();
   }
@@ -86,21 +98,49 @@ export class Player {
       const pad = 0.3;
       if (!this.isBlocked(nx + Math.sign(dir.x) * pad, this.position.z)) this.position.x = nx;
       if (!this.isBlocked(this.position.x, nz + Math.sign(dir.y) * pad)) this.position.z = nz;
-      const target = Math.atan2(dir.x, dir.y);
-      let d = target - this.heading;
-      d = Math.atan2(Math.sin(d), Math.cos(d));
-      this.heading += d * Math.min(1, dt * 12);
       this.walk += dt * speed * 2.2;
     } else {
       this.walk *= 0.8;
+    }
+    // Olha para o alvo quando ataca; senão, para onde anda.
+    const look = this.faceTarget ? Math.atan2(this.faceTarget.x - this.position.x, this.faceTarget.z - this.position.z) : this.moving ? Math.atan2(dir.x, dir.y) : undefined;
+    if (look !== undefined) {
+      let d = look - this.heading;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      this.heading += d * Math.min(1, dt * 14);
     }
     const swing = this.moving ? Math.sin(this.walk) * 0.7 : 0;
     this.legL.rotation.x = swing;
     this.legR.rotation.x = -swing;
     this.armR.rotation.x = -swing * 0.4 - 0.15;
+    this.armR.rotation.y = 0;
+    this.body.rotation.y = 0;
+    if (this.swingT > 0) {
+      this.swingT = Math.max(0, this.swingT - dt);
+      const k = 1 - this.swingT / 0.32;
+      if (this.swingKind === "spin") this.body.rotation.y = k * Math.PI * 2;
+      // Golpe: braço sobe para trás e desce cortando na diagonal.
+      this.armR.rotation.x = k < 0.35 ? -2.6 * (k / 0.35) : -2.6 + 3.4 * ((k - 0.35) / 0.65);
+      this.armR.rotation.y = k < 0.35 ? 0.4 : 0.4 - 1.2 * ((k - 0.35) / 0.65);
+    }
     this.body.position.y = this.moving ? Math.abs(Math.cos(this.walk)) * 0.05 : Math.sin(time * 2) * 0.01;
     this.lantern.intensity = 6 + Math.sin(time * 13) * 0.3 + Math.sin(time * 7.3) * 0.4;
     this.sync();
+  }
+
+  /** Anima um golpe; `spin` gira o corpo inteiro (ataque em área). */
+  swing(kind: "slash" | "spin" = "slash") {
+    this.swingT = 0.32;
+    this.swingKind = kind;
+  }
+
+  /** Mantém o personagem virado para um ponto (o alvo) até receber undefined. */
+  face(p?: THREE.Vector3) {
+    this.faceTarget = p;
+  }
+
+  get facing() {
+    return this.heading;
   }
 
   private sync() {
