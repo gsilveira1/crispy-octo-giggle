@@ -56,6 +56,14 @@ function withOcclusionCutout<M extends THREE.Material>(m: M): M {
 
 type Mats = { wall: THREE.MeshStandardMaterial; tile: THREE.MeshStandardMaterial; slab: THREE.MeshStandardMaterial; metal: THREE.MeshStandardMaterial; trim: THREE.MeshStandardMaterial; sign: THREE.MeshStandardMaterial; tank: THREE.MeshStandardMaterial };
 let mats: Mats | undefined;
+let windowGlow = 1;
+/** Janelas e letreiros acesos (0 = de dia, 1 = noite). Chamado pelo céu a cada quadro. */
+export function setWindowGlow(k: number) {
+  windowGlow = k;
+  if (!mats) return;
+  mats.wall.emissiveIntensity = 1.1 * k;
+  mats.sign.emissiveIntensity = 0.15 + 0.4 * k;
+}
 
 function noiseFill(g: CanvasRenderingContext2D, w: number, h: number, seed: number, amount: number, dark = 0.12, light = 0.06) {
   for (let i = 0; i < w * h * amount; i++) {
@@ -290,6 +298,7 @@ function materials(): Mats {
     sign: withOcclusionCutout(new THREE.MeshStandardMaterial({ map: sign, emissiveMap: sign, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.6 })),
     tank: new THREE.MeshStandardMaterial({ color: 0x2c64a8, roughness: 0.4 }),
   };
+  setWindowGlow(windowGlow);
   return mats;
 }
 

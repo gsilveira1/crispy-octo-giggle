@@ -36,6 +36,8 @@ export class Player {
   private poncho: THREE.Mesh;
   private cuia: THREE.Object3D;
   private lantern: THREE.PointLight;
+  /** Força do lampião (o céu diminui de dia). */
+  lanternScale = 1;
   private bladeTip = new THREE.Object3D();
   private bladeBase = new THREE.Object3D();
   private trail: THREE.Mesh;
@@ -326,7 +328,7 @@ export class Player {
     }
     this.phase += dt * speed * (speed > WALK_MPS * 1.3 ? 1.55 : 2.1);
     this.animate(dt, speed, v);
-    this.lantern.intensity = 6 + Math.sin(time * 13) * 0.3 + Math.sin(time * 7.3) * 0.4;
+    this.lantern.intensity = (6 + Math.sin(time * 13) * 0.3 + Math.sin(time * 7.3) * 0.4) * this.lanternScale;
     this.lantern.position.set(Math.sin(this.heading + 1.4) * 0.35, 0.95, Math.cos(this.heading + 1.4) * 0.35);
     this.sync();
     this.updateTrail();

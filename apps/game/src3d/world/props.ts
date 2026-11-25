@@ -18,6 +18,14 @@ type Kit = {
   trunkMat: THREE.Material; leafMat: THREE.Material;
 };
 let kit: Kit | undefined;
+let glow = 1;
+/** Força das luminárias (0 = apagadas de dia, 1 = noite). Chamado pelo céu a cada quadro. */
+export function setLampGlow(k: number) {
+  glow = k;
+  if (!kit) return;
+  (kit.headMat as THREE.MeshStandardMaterial).emissiveIntensity = 3 * k;
+  (kit.poolMat as THREE.MeshBasicMaterial).opacity = k;
+}
 const wireMat = new THREE.LineBasicMaterial({ color: 0x07080a });
 
 function makeKit(): Kit {
@@ -122,7 +130,10 @@ const CAR_COLORS = ["#6d1f1f", "#2c3e57", "#6b6b66", "#c9c4b8", "#1f3b2a", "#7a5
  * caixas e barris perto dos prédios, barreiras de bloqueio na rua (é depois da Cerração).
  */
 export function buildProps(ground: Uint8Array, size: number, ox: number, oy: number, mpt: number): Props {
-  kit ??= makeKit();
+  if (!kit) {
+    kit = makeKit();
+    setLampGlow(glow);
+  }
   const at = (c: number, r: number) => (c < 0 || r < 0 || c >= size || r >= size ? undefined : ground[r * size + c]);
   const walkable = (t: number | undefined) => t === Ground.ground || t === Ground.plaza || t === Ground.path;
   const lamps: (Inst & Lamp)[] = [];

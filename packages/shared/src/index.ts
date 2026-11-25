@@ -5,3 +5,4 @@ export * from "./rules.js";
 export * from "./story.js";
 export * from "./map.js";
 export * from "./tiles.js";
+export * from "./time.js";
