@@ -59,7 +59,8 @@ async function main() {
   player.attachTrail(scene);
   // Modelo 3D da classe (gerado na Meshy, packages/meshy). Até carregar, aparece o boneco procedural.
   new GLTFLoader()
-    .loadAsync("models/class-cavaleiro.glb")
+    // VITE_PLAYER_MODEL troca o caminho em builds que não servem .glb (o artifact de testes publica como .wasm).
+    .loadAsync(import.meta.env.VITE_PLAYER_MODEL ?? "models/class-cavaleiro.glb")
     .then((g) => player.useModel(g.scene))
     .catch((e) => console.warn("modelo do personagem não carregou; usando o procedural", e));
   const refuge = player.position.clone();
