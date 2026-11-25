@@ -10,6 +10,13 @@ const DECEL = 30;
 const DODGE_S = 0.42;
 const DODGE_MPS = 10;
 const DODGE_CD = 0.9;
+/** Pulo: gravidade (m/s²) e velocidade inicial para subir ~1,4 m (dá para subir num carro e, de cima dele, numa laje). */
+const GRAVITY = 24;
+const JUMP_V = Math.sqrt(2 * GRAVITY * 1.4);
+/** Degrau que o personagem sobe andando, sem pular (meio-fio, calçada). */
+const STEP = 0.35;
+/** Altura do centro do corpo encolhido na cambalhota: o giro é em volta dele, não dos pés. */
+const ROLL_PIVOT = 0.8;
 
 export type Action = "slash1" | "slash2" | "slash3" | "spin" | "charge" | "drink" | "hurt" | "dodge";
 const DURATION: Record<Action, number> = { slash1: 0.34, slash2: 0.34, slash3: 0.46, spin: 0.42, charge: 0.4, drink: 1.1, hurt: 0.28, dodge: DODGE_S };
@@ -57,7 +64,15 @@ export class Player {
   private itemsR: THREE.Object3D[] = [];
   private itemsL: THREE.Object3D[] = [];
 
-  constructor(x: number, z: number, private isBlocked: (x: number, z: number) => boolean) {
+  /** Velocidade vertical (m/s) e se está pisando em algo. */
+  private vy = 0;
+  grounded = true;
+  private airT = 0;
+  /** Tempo restante do agachamento ao cair no chão. */
+  private landT = 0;
+
+  /** heightAt: altura onde dá para pisar em (x, z); Infinity = parede. */
+  constructor(x: number, z: number, private heightAt: (x: number, z: number) => number) {
     this.position.set(x, 0, z);
     const skin = mat(0xc08e66, 0.7);
     const shirt = mat(0xe3dccb);
@@ -239,9 +254,18 @@ export class Player {
     this.play(kind === "spin" ? "spin" : "slash1");
   }
 
-  /** Esquiva rolando na direção pedida (ou para a frente). Devolve true se rolou. */
+  /** Pula se estiver no chão. Devolve true se pulou. */
+  jump(): boolean {
+    if (this.dead || !this.grounded || this.action === "dodge" || this.action === "drink") return false;
+    this.vy = JUMP_V;
+    this.grounded = false;
+    this.airT = 0;
+    return true;
+  }
+
+  /** Esquiva rolando na direção pedida (ou para a frente). Devolve true se rolou. Só no chão. */
   dodge(dir: THREE.Vector2): boolean {
-    if (this.dead || this.dodgeCd > 0 || this.action === "dodge") return false;
+    if (this.dead || this.dodgeCd > 0 || this.action === "dodge" || !this.grounded) return false;
     if (dir.lengthSq() < 0.01) dir = new THREE.Vector2(Math.sin(this.heading), Math.cos(this.heading));
     this.dodgeDir.copy(dir).normalize();
     this.heading = Math.atan2(this.dodgeDir.x, this.dodgeDir.y);
@@ -261,6 +285,8 @@ export class Player {
 
   revive() {
     this.dead = false;
+    this.vy = 0;
+    this.grounded = true;
     this.body.rotation.set(0, 0, 0);
     this.body.position.set(0, 0, 0);
   }
@@ -277,6 +303,8 @@ export class Player {
       this.actionT += dt;
       if (this.actionT >= DURATION[this.action]) {
         if (this.action === "drink") this.cuia.visible = false;
+        // A cambalhota termina com uma volta inteira: zera o giro para não "desenrolar" de volta.
+        if (this.action === "dodge") this.body.rotation.x = 0;
         this.action = undefined;
       }
     }
@@ -307,11 +335,32 @@ export class Player {
       const nx = this.position.x + v.x * dt;
       const nz = this.position.z + v.y * dt;
       const pad = 0.3;
-      if (!this.isBlocked(nx + Math.sign(v.x) * pad, this.position.z)) this.position.x = nx;
+      // Entra onde o piso não passa de um degrau acima dos pés (pulando, dá para subir em coisas).
+      const fits = (x: number, z: number) => this.heightAt(x, z) <= this.position.y + STEP;
+      if (fits(nx + Math.sign(v.x) * pad, this.position.z)) this.position.x = nx;
       else v.x = 0;
-      if (!this.isBlocked(this.position.x, nz + Math.sign(v.y) * pad)) this.position.z = nz;
+      if (fits(this.position.x, nz + Math.sign(v.y) * pad)) this.position.z = nz;
       else v.y = 0;
     }
+
+    // Vertical: gravidade, pouso e queda ao sair da beirada; degraus baixos sobem direto.
+    let floor = this.heightAt(this.position.x, this.position.z);
+    if (!Number.isFinite(floor)) floor = this.position.y;
+    if (this.grounded && floor > this.position.y && floor <= this.position.y + STEP) this.position.y = floor;
+    if (!this.grounded || floor < this.position.y - 0.02) {
+      this.grounded = false;
+      this.airT += dt;
+      this.vy -= GRAVITY * dt;
+      this.position.y += this.vy * dt;
+      if (this.position.y <= floor) {
+        this.position.y = floor;
+        if (this.airT > 0.25) this.landT = Math.min(0.2, this.airT * 0.25);
+        this.vy = 0;
+        this.grounded = true;
+        this.airT = 0;
+      }
+    } else this.position.y = floor;
+    this.landT = Math.max(0, this.landT - dt);
 
     // Para onde olhar: alvo em combate, senão a direção do movimento.
     if (!this.dead && this.action !== "dodge") {
@@ -361,6 +410,30 @@ export class Player {
     let bob = Math.abs(c) * (0.04 + run * 0.06) * move - run * 0.04;
     let bodyRot: [number, number, number] = [0, 0, 0];
     let lift = 0;
+
+    // No ar: pernas encolhidas, braços abertos para equilibrar; ao pousar, agacha um pouco.
+    if (!this.grounded && !this.dead) {
+      const up = this.vy > 0 ? 1 : 0.6;
+      set("thighL", -1.0 * up, 0, 0.05);
+      set("thighR", -0.35 * up, 0, -0.05);
+      set("kneeL", 1.4 * up);
+      set("kneeR", 0.7 * up);
+      set("shoulderL", -0.5, 0, 0.7);
+      set("shoulderR", -0.7, 0, -0.6);
+      set("elbowL", -0.6);
+      set("elbowR", -0.8);
+      set("spine", 0.15);
+      bob = 0;
+    }
+    if (this.landT > 0) {
+      const k = this.landT / 0.2;
+      set("thighL", -0.7 * k);
+      set("thighR", -0.7 * k);
+      set("kneeL", 1.2 * k);
+      set("kneeR", 1.2 * k);
+      set("spine", 0.3 * k);
+      bob = -0.22 * k;
+    }
 
     // Ação por cima da locomoção.
     const a = this.action;
@@ -442,7 +515,8 @@ export class Player {
       set("shoulderR", -1.2, 0, -0.3);
       set("elbowL", -1.4);
       set("elbowR", -1.4);
-      bob = -0.45 * Math.sin(k * Math.PI);
+      // O centro do giro desce um pouco no meio do rolamento (o corpo encolhido rola rente ao chão).
+      bob = -0.12 * Math.sin(k * Math.PI);
     }
 
     if (this.dead) {
@@ -472,11 +546,17 @@ export class Player {
     this.body.rotation.x += (bodyRot[0] - this.body.rotation.x) * fb;
     this.body.rotation.y += (bodyRot[1] - this.body.rotation.y) * fb;
     this.body.rotation.z += (bodyRot[2] - this.body.rotation.z) * fb;
-    // Na cambalhota o corpo gira em volta da cintura, não dos pés.
-    const pivot = a === "dodge" ? 0.55 : 0;
+    // Na cambalhota o corpo gira em volta do centro do corpo encolhido, não dos pés:
+    // um ponto a ROLL_PIVOT de altura no corpo fica parado enquanto o resto gira em volta dele.
     const by = bob + lift + Math.sin(this.t * 2) * 0.008;
-    this.body.position.y += (by + pivot - pivot * Math.cos(this.body.rotation.x) - this.body.position.y) * damp(dt, 25);
-    this.body.position.z = a === "dodge" ? pivot * Math.sin(this.body.rotation.x) : 0;
+    if (a === "dodge") {
+      const th = this.body.rotation.x;
+      this.body.position.y = by + ROLL_PIVOT - ROLL_PIVOT * Math.cos(th);
+      this.body.position.z = -ROLL_PIVOT * Math.sin(th);
+    } else {
+      this.body.position.y += (by - this.body.position.y) * damp(dt, 25);
+      this.body.position.z = 0;
+    }
 
     // Poncho: atrasa com a velocidade e abre quando corre ou gira.
     const local = new THREE.Vector2(v.x, v.y).rotateAround(new THREE.Vector2(), this.heading);
